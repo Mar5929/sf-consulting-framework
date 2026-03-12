@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SF Framework Overview — Claude Toolkit</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .lc-edge {
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .ep-label {
+      font-family: var(--font-ui);
+      font-size: 11px;
+      font-weight: 600;
+      fill: var(--text);
+    }
+    .ep-arrow {
+      fill: none;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <button id="btn-reset">Reset Zoom</button>
+  </div>
+
+  <div class="title-bar">
+    <h1>Salesforce Framework Overview</h1>
+    <div class="subtitle">Methodology &middot; Tools &middot; Deliverables — Horizontal Swim-Lane Flow</div>
+  </div>
+
+  <a class="back-link" href="index.html">&larr; All Diagrams</a>
+
+  <svg class="diagram" id="svg"></svg>
+
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="shared.js"></script>
+  <script src="data/sf-framework-overview-data.js"></script>
+  <script>
+  (() => {
+    const { phases, nodes, edges, entryPoints } = SFFrameworkOverviewData;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    const svg = d3.select('#svg');
+    const g = svg.append('g');
+
+    const zoom = Shared.setupZoom(svg, g);
+    svg.call(zoom.transform, d3.zoomIdentity.translate(80, height / 2 - 140).scale(0.72));
+    document.getElementById('btn-reset').onclick = () => {
+      svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity.translate(80, height / 2 - 140).scale(0.72));
+    };
+
+    const tooltip = Shared.createTooltip();
+    const sidebar = Shared.createSidebar();
+
+    // ── Layout constants ──
+    const stepW = 150;
+    const stepH = 56;
+    const gapX = 210;
+    const laneH = 120;
+    const laneGap = 14;
+    const startX = 200;
+    const startY = 140;
+
+    // ── Phase → Y mapping ──
+    const phaseY = {};
+    phases.forEach((p, i) => {
+      phaseY[p.id] = startY + i * (laneH + laneGap);
+    });
+
+    // Assign positions
+    nodes.forEach(n => {
+      n.px = startX + n.x * gapX;
+      n.py = phaseY[n.phase] + laneH / 2;
+    });
+
+    const totalW = 6 * gapX + 200;
+
+    // ── Arrow markers ──
+    const defs = svg.append('defs');
+    defs.append('marker')
+      .attr('id', 'arrow')
+      .attr('viewBox', '0 0 10 10')
+      .attr('refX', 9).attr('refY', 5)
+      .attr('markerWidth', 10).attr('markerHeight', 10)
+      .attr('orient', 'auto')
+      .append('path')
+      .attr('d', 'M0,1 L8,5 L0,9 Z')
+      .attr('fill', '#7DD3FC');
+
+    // Entry point arrow markers (one per entry point color)
+    entryPoints.forEach(ep => {
+      defs.append('marker')
+        .attr('id', 'arrow-ep-' + ep.id)
+        .attr('viewBox', '0 0 10 10')
+        .attr('refX', 9).attr('refY', 5)
+        .attr('markerWidth', 10).attr('markerHeight', 10)
+        .attr('orient', 'auto')
+        .append('path')
+        .attr('d', 'M0,1 L8,5 L0,9 Z')
+        .attr('fill', ep.color);
+    });
+
+    // ── Swim Lanes ──
+    const laneX = startX - stepW / 2 - 30;
+    phases.forEach((p, i) => {
+      const y = phaseY[p.id];
+      g.append('rect')
+        .attr('class', 'swim-lane')
+        .attr('x', laneX)
+        .attr('y', y)
+        .attr('width', totalW - laneX + startX)
+        .attr('height', laneH)
+        .attr('fill', d3.color(p.color).copy({opacity: 0.04}));
+
+      g.append('text')
+        .attr('class', 'phase-label')
+        .attr('x', laneX + 12)
+        .attr('y', y + 20)
+        .attr('fill', p.color)
+        .text(p.label);
+    });
+
+    // ── Entry Point Arrows ──
+    const epG = g.append('g').attr('class', 'entry-points');
+    const methodY = phaseY['methodology'];
+    entryPoints.forEach((ep, i) => {
+      const targetX = startX + ep.targetPhase * gapX;
+      const targetY = methodY;
+      // Start position: staggered above and to the left
+      const srcX = targetX - 100 - i * 15;
+      const srcY = methodY - 80 - i * 22;
+      const midX = targetX - 40;
+      const midY = targetY - 20;
+
+      epG.append('path')
+        .attr('class', 'ep-arrow')
+        .attr('d', `M${srcX},${srcY} Q${midX},${srcY} ${targetX},${targetY}`)
+        .attr('stroke', ep.color)
+        .attr('marker-end', `url(#arrow-ep-${ep.id})`);
+
+      epG.append('text')
+        .attr('class', 'ep-label')
+        .attr('x', srcX - 4)
+        .attr('y', srcY - 8)
+        .attr('text-anchor', 'middle')
+        .attr('fill', ep.color)
+        .text(ep.name);
+
+      // Tooltip on entry point label
+      epG.append('rect')
+        .attr('x', srcX - 50).attr('y', srcY - 24)
+        .attr('width', 100).attr('height', 20)
+        .attr('fill', 'transparent')
+        .attr('cursor', 'pointer')
+        .on('mouseover', (e) => tooltip.show({ name: ep.name, category: 'Entry Point', description: ep.description }, e))
+        .on('mousemove', (e) => tooltip.show({ name: ep.name, category: 'Entry Point', description: ep.description }, e))
+        .on('mouseout', () => tooltip.hide());
+    });
+
+    // ── Edges ──
+    const nodeMap = {};
+    nodes.forEach(n => { nodeMap[n.id] = n; });
+
+    const edgeG = g.append('g');
+    edges.forEach(e => {
+      const s = nodeMap[e.source];
+      const t = nodeMap[e.target];
+      if (!s || !t) return;
+
+      const samePhase = s.phase === t.phase;
+      const isVertical = !samePhase;
+
+      if (samePhase) {
+        // Horizontal forward arrow
+        const sx = s.px + stepW / 2;
+        const sy = s.py;
+        const tx = t.px - stepW / 2;
+        const ty = t.py;
+        edgeG.append('line')
+          .attr('class', 'lc-edge')
+          .attr('x1', sx).attr('y1', sy)
+          .attr('x2', tx).attr('y2', ty)
+          .attr('stroke', '#7DD3FC')
+          .attr('stroke-width', 3)
+          .attr('opacity', 0.85)
+          .attr('marker-end', 'url(#arrow)');
+      } else {
+        // Vertical dashed connector
+        const sx = s.px;
+        const sy = s.py + stepH / 2;
+        const tx = t.px;
+        const ty = t.py - stepH / 2;
+        edgeG.append('line')
+          .attr('class', 'lc-edge')
+          .attr('x1', sx).attr('y1', sy)
+          .attr('x2', tx).attr('y2', ty)
+          .attr('stroke', '#64748B')
+          .attr('stroke-width', 1.5)
+          .attr('stroke-dasharray', '4 3')
+          .attr('opacity', 0.5);
+      }
+    });
+
+    // ── Nodes ──
+    const nodeG = g.selectAll('.lc-node')
+      .data(nodes)
+      .join('g')
+      .attr('class', 'lc-node')
+      .attr('transform', d => `translate(${d.px - stepW/2},${d.py - stepH/2})`)
+      .attr('cursor', 'pointer');
+
+    nodeG.each(function(d) {
+      const el = d3.select(this);
+      el.append('rect')
+        .attr('width', stepW).attr('height', stepH)
+        .attr('rx', 8)
+        .attr('fill', Shared.color(d.category))
+        .attr('opacity', 0.85);
+
+      // Multi-line label support
+      const lines = d.name.split('\n');
+      const lineH = 14;
+      const textY = stepH / 2 - ((lines.length - 1) * lineH) / 2;
+      lines.forEach((line, i) => {
+        el.append('text')
+          .attr('x', stepW / 2).attr('y', textY + i * lineH)
+          .attr('text-anchor', 'middle')
+          .attr('dominant-baseline', 'central')
+          .attr('fill', '#fff')
+          .attr('font-size', 11)
+          .attr('font-weight', 500)
+          .text(line);
+      });
+    });
+
+    // Interactivity
+    nodeG
+      .on('mouseover', (e, d) => tooltip.show(d, e))
+      .on('mousemove', (e, d) => tooltip.show(d, e))
+      .on('mouseout', () => tooltip.hide())
+      .on('click', (e, d) => {
+        sidebar.show(d, edges.map(e => ({ source: e.source, target: e.target })), nodes);
+      });
+
+    svg.on('click', (e) => {
+      if (e.target === svg.node()) sidebar.close();
+    });
+
+    // ── Legend ──
+    Shared.createLegend([
+      { key: 'process', label: 'Methodology Phase' },
+      { key: 'global-skill', label: 'Skills' },
+      { key: 'mcp', label: 'MCP Servers' },
+      { key: 'plugin', label: 'Plugins' },
+      { key: 'external', label: 'External Services' },
+      { key: 'template', label: 'Deliverables' },
+    ]);
+  })();
+  </script>
+</body>
+</html>

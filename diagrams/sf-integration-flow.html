@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Integration &amp; Data Flow — Salesforce Framework</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .edge-label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      fill: var(--text-muted);
+      text-anchor: middle;
+      pointer-events: none;
+    }
+    .sidebar .sb-patterns { margin-top: 16px; }
+    .sidebar .sb-pattern {
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar .sb-pattern-name {
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text);
+      margin-bottom: 2px;
+    }
+    .sidebar .sb-pattern-desc {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-bottom: 2px;
+    }
+    .sidebar .sb-pattern-use {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <button id="btn-reset">Reset Zoom</button>
+    <input type="text" id="search" placeholder="Search nodes...">
+  </div>
+
+  <div class="title-bar">
+    <h1>Integration &amp; Data Flow</h1>
+    <div class="subtitle">Salesforce Platform Integrations — Systems, APIs &amp; Patterns</div>
+  </div>
+
+  <a class="back-link" href="index.html">&larr; All Diagrams</a>
+
+  <svg class="diagram" id="svg"></svg>
+
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="shared.js"></script>
+  <script src="data/sf-integration-flow-data.js"></script>
+  <script>
+  (() => {
+    const { nodes, edges, patterns, categories } = SfIntegrationFlowData;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    const svg = d3.select('#svg');
+    const defs = svg.append('defs');
+    const g = svg.append('g');
+
+    // Arrow markers
+    defs.append('marker')
+      .attr('id', 'arrow-fwd')
+      .attr('viewBox', '0 0 10 8')
+      .attr('refX', 28).attr('refY', 4)
+      .attr('markerWidth', 8).attr('markerHeight', 6)
+      .attr('orient', 'auto')
+      .append('path')
+      .attr('d', 'M0,0 L10,4 L0,8 Z')
+      .attr('fill', '#64748B');
+
+    defs.append('marker')
+      .attr('id', 'arrow-back')
+      .attr('viewBox', '0 0 10 8')
+      .attr('refX', -18).attr('refY', 4)
+      .attr('markerWidth', 8).attr('markerHeight', 6)
+      .attr('orient', 'auto-start-reverse')
+      .append('path')
+      .attr('d', 'M10,0 L0,4 L10,8 Z')
+      .attr('fill', '#64748B');
+
+    // Zoom
+    const zoom = Shared.setupZoom(svg, g);
+    svg.call(zoom.transform, d3.zoomIdentity.translate(width / 2, height / 2).scale(0.85));
+    document.getElementById('btn-reset').onclick = () => Shared.resetZoom(svg, zoom, width, height);
+
+    // Tooltip
+    const tooltip = Shared.createTooltip();
+
+    // Custom sidebar with patterns
+    const sidebarEl = document.createElement('div');
+    sidebarEl.className = 'sidebar';
+    sidebarEl.innerHTML = `
+      <button class="sidebar-close">&times;</button>
+      <h2 class="sb-name"></h2>
+      <div class="sb-category"></div>
+      <div class="sb-desc"></div>
+      <h3>Connections</h3>
+      <ul class="sb-connections"></ul>
+      <div class="sb-patterns"></div>
+    `;
+    document.body.appendChild(sidebarEl);
+    sidebarEl.querySelector('.sidebar-close').onclick = () => sidebarEl.classList.remove('open');
+
+    function showSidebar(d) {
+      sidebarEl.querySelector('.sb-name').textContent = d.name || d.id;
+      sidebarEl.querySelector('.sb-category').textContent = d.category || '';
+      sidebarEl.querySelector('.sb-desc').textContent = d.description || '';
+
+      // Connections
+      const connIds = new Set();
+      const connLabels = {};
+      edges.forEach(e => {
+        const src = typeof e.source === 'object' ? e.source.id : e.source;
+        const tgt = typeof e.target === 'object' ? e.target.id : e.target;
+        if (src === d.id) { connIds.add(tgt); connLabels[tgt] = e.label; }
+        if (tgt === d.id) { connIds.add(src); connLabels[src] = e.label; }
+      });
+      const ul = sidebarEl.querySelector('.sb-connections');
+      ul.innerHTML = '';
+      connIds.forEach(id => {
+        const n = nodes.find(n => n.id === id);
+        const li = document.createElement('li');
+        li.textContent = `${n ? n.name : id} — ${connLabels[id] || ''}`;
+        ul.appendChild(li);
+      });
+
+      // Show patterns only for hub node
+      const patternsEl = sidebarEl.querySelector('.sb-patterns');
+      if (d.category === 'hub') {
+        patternsEl.innerHTML = '<h3>Integration Patterns</h3>';
+        patterns.forEach(p => {
+          patternsEl.innerHTML += `
+            <div class="sb-pattern">
+              <div class="sb-pattern-name">${p.name}</div>
+              <div class="sb-pattern-desc">${p.description}</div>
+              <div class="sb-pattern-use">Use: ${p.useCase}</div>
+            </div>
+          `;
+        });
+      } else {
+        patternsEl.innerHTML = '';
+      }
+
+      sidebarEl.classList.add('open');
+    }
+
+    // Force simulation
+    const simulation = d3.forceSimulation(nodes)
+      .force('link', d3.forceLink(edges).id(d => d.id).distance(d => {
+        const src = typeof d.source === 'object' ? d.source : nodes.find(n => n.id === d.source);
+        return src && src.category === 'hub' ? 200 : 120;
+      }).strength(0.4))
+      .force('charge', d3.forceManyBody().strength(-250))
+      .force('radial', d3.forceRadial(d => d.category === 'hub' ? 0 : 250, 0, 0).strength(d => d.category === 'hub' ? 1 : 0.5))
+      .force('collision', d3.forceCollide(d => d.category === 'hub' ? 50 : 30));
+
+    // Fix hub
+    const hub = nodes.find(n => n.category === 'hub');
+    if (hub) { hub.fx = 0; hub.fy = 0; }
+
+    // Edges
+    const edgeG = g.append('g');
+    const edgeEls = edgeG.selectAll('.edge-group')
+      .data(edges)
+      .join('g')
+      .attr('class', 'edge-group');
+
+    edgeEls.append('line')
+      .attr('class', 'edge')
+      .attr('marker-end', 'url(#arrow-fwd)')
+      .attr('marker-start', d => d.bidirectional ? 'url(#arrow-back)' : null);
+
+    const edgeLabels = edgeEls.append('text')
+      .attr('class', 'edge-label')
+      .text(d => d.label);
+
+    // Nodes
+    const nodeEls = Shared.drawNodes(g, nodes, {
+      radius: d => d.category === 'hub' ? 32 : 16
+    });
+
+    // Drag
+    nodeEls.call(d3.drag()
+      .on('start', (e, d) => { if (!e.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+      .on('drag', (e, d) => { d.fx = e.x; d.fy = e.y; })
+      .on('end', (e, d) => { if (!e.active) simulation.alphaTarget(0); if (d.category !== 'hub') { d.fx = null; d.fy = null; } })
+    );
+
+    // Interactivity
+    const edgeLines = edgeEls.selectAll('line');
+    nodeEls
+      .on('mouseover', (e, d) => tooltip.show(d, e))
+      .on('mousemove', (e, d) => tooltip.show(d, e))
+      .on('mouseout', () => tooltip.hide())
+      .on('click', (e, d) => {
+        showSidebar(d);
+        Shared.highlightConnections(d.id, nodeEls, edgeLines, edges);
+      });
+
+    svg.on('click', (e) => {
+      if (e.target === svg.node()) {
+        sidebarEl.classList.remove('open');
+        Shared.clearHighlight(nodeEls, edgeLines);
+      }
+    });
+
+    // Tick
+    simulation.on('tick', () => {
+      edgeEls.selectAll('line')
+        .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+        .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+
+      edgeLabels
+        .attr('x', d => (d.source.x + d.target.x) / 2)
+        .attr('y', d => (d.source.y + d.target.y) / 2 - 6);
+
+      nodeEls.attr('transform', d => `translate(${d.x},${d.y})`);
+    });
+
+    // Legend
+    Shared.createLegend(categories);
+
+    // Search
+    Shared.setupSearch(document.getElementById('search'), nodes, (matches) => {
+      if (!matches) {
+        Shared.clearHighlight(nodeEls, edgeLines);
+        return;
+      }
+      const ids = new Set(matches.map(m => m.id));
+      nodeEls.style('opacity', d => ids.has(d.id) ? 1 : 0.1);
+      edgeLines.style('opacity', 0.05);
+    });
+  })();
+  </script>
+</body>
+</html>

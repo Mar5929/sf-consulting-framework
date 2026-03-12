@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scenario Flows — Salesforce Framework</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .phase-header {
+      font-family: var(--font-ui);
+      font-size: 14px;
+      font-weight: 700;
+      fill: var(--text);
+      text-anchor: middle;
+    }
+    .phase-col-bg {
+      fill: rgba(255,255,255,0.02);
+      stroke: var(--border);
+      stroke-width: 1;
+      stroke-dasharray: 4 3;
+      rx: 6;
+    }
+    .scenario-label {
+      font-family: var(--font-ui);
+      font-size: 13px;
+      font-weight: 600;
+      text-anchor: end;
+    }
+    .scenario-desc {
+      font-family: var(--font-ui);
+      font-size: 10px;
+      fill: var(--text-dim);
+      text-anchor: end;
+    }
+    .step-node { cursor: pointer; transition: r .15s; }
+    .step-text {
+      font-family: var(--font-ui);
+      font-size: 9px;
+      fill: var(--text);
+      text-anchor: middle;
+      pointer-events: none;
+    }
+    .path-line {
+      fill: none;
+      stroke-width: 3;
+      stroke-linecap: round;
+    }
+    .loop-arrow {
+      fill: none;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+    }
+    .sidebar .sb-step-list {
+      list-style: none;
+      padding: 0;
+    }
+    .sidebar .sb-step-list li {
+      font-size: 13px;
+      padding: 6px 0;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar .sb-step-list li .step-phase {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <button id="btn-reset">Reset Zoom</button>
+  </div>
+
+  <div class="title-bar">
+    <h1>Scenario Flows</h1>
+    <div class="subtitle">Engagement Types Mapped Across Lifecycle Phases</div>
+  </div>
+
+  <a class="back-link" href="index.html">&larr; All Diagrams</a>
+
+  <svg class="diagram" id="svg"></svg>
+
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="shared.js"></script>
+  <script src="data/sf-scenario-flows-data.js"></script>
+  <script>
+  (() => {
+    const { phases, scenarios } = SfScenarioFlowsData;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    const svg = d3.select('#svg');
+    const g = svg.append('g');
+
+    // Zoom
+    const zoom = Shared.setupZoom(svg, g);
+    svg.call(zoom.transform, d3.zoomIdentity.translate(width * 0.15, height * 0.15).scale(0.8));
+    document.getElementById('btn-reset').onclick = () => {
+      svg.transition().duration(500)
+        .call(zoom.transform, d3.zoomIdentity.translate(width * 0.15, height * 0.15).scale(0.8));
+    };
+
+    // Tooltip & Sidebar
+    const tooltip = Shared.createTooltip();
+
+    const sidebarEl = document.createElement('div');
+    sidebarEl.className = 'sidebar';
+    sidebarEl.innerHTML = `
+      <button class="sidebar-close">&times;</button>
+      <h2 class="sb-name"></h2>
+      <div class="sb-category"></div>
+      <div class="sb-desc"></div>
+      <h3>Steps</h3>
+      <ul class="sb-step-list"></ul>
+    `;
+    document.body.appendChild(sidebarEl);
+    sidebarEl.querySelector('.sidebar-close').onclick = () => sidebarEl.classList.remove('open');
+
+    function showSidebar(scenario) {
+      sidebarEl.querySelector('.sb-name').textContent = scenario.name;
+      sidebarEl.querySelector('.sb-category').textContent = scenario.id;
+      sidebarEl.querySelector('.sb-desc').textContent = scenario.description;
+      const ul = sidebarEl.querySelector('.sb-step-list');
+      ul.innerHTML = '';
+      scenario.steps.forEach((step, i) => {
+        const li = document.createElement('li');
+        const phaseIdx = scenario.path[i];
+        const phaseName = phaseIdx !== undefined ? phases[phaseIdx] : '';
+        li.innerHTML = `${step}<span class="step-phase">${phaseName}</span>`;
+        ul.appendChild(li);
+      });
+      sidebarEl.classList.add('open');
+    }
+
+    // Layout
+    const leftMargin = 220;
+    const topMargin = 40;
+    const colW = 160;
+    const colH = 400;
+    const rowSpacing = 80;
+    const headerH = 40;
+    const phaseColors = ['#7C3AED', '#2563EB', '#0D9488', '#D97706', '#EA580C', '#059669'];
+
+    // Phase columns
+    phases.forEach((phase, i) => {
+      const x = leftMargin + i * colW;
+
+      // Column background
+      g.append('rect')
+        .attr('class', 'phase-col-bg')
+        .attr('x', x - colW / 2 + 10)
+        .attr('y', topMargin)
+        .attr('width', colW - 20)
+        .attr('height', colH);
+
+      // Phase header
+      g.append('text')
+        .attr('class', 'phase-header')
+        .attr('x', x)
+        .attr('y', topMargin + 24)
+        .attr('fill', phaseColors[i])
+        .text(phase);
+    });
+
+    // Scenario paths
+    const scenarioStartY = topMargin + headerH + 60;
+
+    scenarios.forEach((scenario, si) => {
+      const rowY = scenarioStartY + si * rowSpacing;
+
+      // Scenario label on left
+      g.append('text')
+        .attr('class', 'scenario-label')
+        .attr('x', leftMargin - colW / 2 - 10)
+        .attr('y', rowY + 4)
+        .attr('fill', scenario.color)
+        .text(scenario.name);
+
+      g.append('text')
+        .attr('class', 'scenario-desc')
+        .attr('x', leftMargin - colW / 2 - 10)
+        .attr('y', rowY + 18)
+        .text(scenario.description.length > 45 ? scenario.description.slice(0, 45) + '...' : scenario.description);
+
+      // Draw path line connecting active phases
+      if (scenario.path.length > 1) {
+        const lineData = scenario.path.map(pi => ({
+          x: leftMargin + pi * colW,
+          y: rowY
+        }));
+
+        const lineGen = d3.line().x(d => d.x).y(d => d.y).curve(d3.curveMonotoneX);
+
+        g.append('path')
+          .attr('class', 'path-line')
+          .attr('d', lineGen(lineData))
+          .attr('stroke', scenario.color)
+          .attr('opacity', 0.6);
+      }
+
+      // Draw loop arrow for managed services
+      if (scenario.id === 'managed') {
+        const cx = leftMargin + scenario.path[0] * colW;
+        const r = 20;
+        g.append('path')
+          .attr('class', 'loop-arrow')
+          .attr('d', `M${cx + r},${rowY} A${r},${r} 0 1,1 ${cx + r - 1},${rowY + 1}`)
+          .attr('stroke', scenario.color)
+          .attr('opacity', 0.6)
+          .attr('marker-end', 'url(#scenario-arrow)');
+      }
+
+      // Draw step nodes at active phase positions
+      scenario.path.forEach((phaseIdx, stepIdx) => {
+        const cx = leftMargin + phaseIdx * colW;
+        const cy = rowY;
+        const stepName = scenario.steps[stepIdx] || '';
+
+        const nodeG = g.append('g')
+          .attr('transform', `translate(${cx}, ${cy})`)
+          .style('cursor', 'pointer');
+
+        nodeG.append('circle')
+          .attr('class', 'step-node')
+          .attr('r', 14)
+          .attr('fill', scenario.color)
+          .attr('opacity', 0.85)
+          .attr('stroke', d3.color(scenario.color).brighter(0.5))
+          .attr('stroke-width', 1.5);
+
+        // Step number
+        nodeG.append('text')
+          .attr('text-anchor', 'middle')
+          .attr('dy', 4)
+          .attr('font-size', '10px')
+          .attr('font-weight', '600')
+          .attr('fill', '#fff')
+          .attr('pointer-events', 'none')
+          .text(stepIdx + 1);
+
+        // Step label below
+        nodeG.append('text')
+          .attr('class', 'step-text')
+          .attr('y', 26)
+          .text(stepName.length > 18 ? stepName.slice(0, 18) + '...' : stepName);
+
+        // Interactions
+        nodeG.on('mouseover', (event) => {
+          tooltip.show({ name: stepName, category: scenario.name, description: scenario.description }, event);
+        });
+        nodeG.on('mousemove', (event) => {
+          tooltip.show({ name: stepName, category: scenario.name, description: scenario.description }, event);
+        });
+        nodeG.on('mouseout', () => tooltip.hide());
+        nodeG.on('click', () => showSidebar(scenario));
+      });
+    });
+
+    // Arrow marker for loop
+    svg.append('defs').append('marker')
+      .attr('id', 'scenario-arrow')
+      .attr('viewBox', '0 0 10 8')
+      .attr('refX', 10).attr('refY', 4)
+      .attr('markerWidth', 8).attr('markerHeight', 6)
+      .attr('orient', 'auto')
+      .append('path')
+      .attr('d', 'M0,0 L10,4 L0,8 Z')
+      .attr('fill', '#34D399');
+
+    // Legend
+    const legendData = scenarios.map(s => ({ key: s.id, label: s.name, color: s.color }));
+    const legendEl = document.createElement('div');
+    legendEl.className = 'legend';
+    legendData.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'legend-item';
+      div.innerHTML = `<span class="legend-swatch" style="background:${item.color}"></span>${item.label}`;
+      legendEl.appendChild(div);
+    });
+    document.body.appendChild(legendEl);
+
+    // Close sidebar on background click
+    svg.on('click', (e) => {
+      if (e.target === svg.node()) {
+        sidebarEl.classList.remove('open');
+      }
+    });
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tool x Phase Mapping — Salesforce Framework</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .cell-rect { cursor: pointer; transition: opacity .15s, stroke-width .15s; }
+    .cell-rect:hover { stroke: var(--text); stroke-width: 2; }
+    .cell-rect.inactive { cursor: default; }
+    .col-header {
+      font-family: var(--font-ui);
+      font-size: 13px;
+      font-weight: 700;
+      text-anchor: middle;
+    }
+    .row-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      fill: var(--text);
+      text-anchor: end;
+      cursor: pointer;
+      transition: fill .15s;
+    }
+    .row-label:hover { fill: #fff; }
+    .cell-text {
+      font-family: var(--font-ui);
+      font-size: 8px;
+      fill: var(--text);
+      text-anchor: middle;
+      pointer-events: none;
+      opacity: 0.9;
+    }
+    .highlight-overlay {
+      fill: rgba(255,255,255,0.06);
+      pointer-events: none;
+    }
+    .sidebar .sb-detail-row {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 12px;
+    }
+    .sidebar .sb-detail-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 4px;
+    }
+    .sidebar .sb-detail-value {
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .sidebar .sb-phase-list {
+      list-style: none;
+      padding: 0;
+    }
+    .sidebar .sb-phase-list li {
+      font-size: 13px;
+      padding: 6px 0;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar .sb-phase-list li .phase-name {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <button id="btn-reset">Reset Zoom</button>
+    <input type="text" id="search" placeholder="Search tools...">
+  </div>
+
+  <div class="title-bar">
+    <h1>Tool x Phase Mapping</h1>
+    <div class="subtitle">Which Claude Toolkit Tools Activate in Each Salesforce Lifecycle Phase</div>
+  </div>
+
+  <a class="back-link" href="index.html">&larr; All Diagrams</a>
+
+  <svg class="diagram" id="svg"></svg>
+
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="shared.js"></script>
+  <script src="data/sf-tool-mapping-data.js"></script>
+  <script>
+  (() => {
+    const { phases, tools, matrix, categories } = SfToolMappingData;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    const svg = d3.select('#svg');
+    const g = svg.append('g');
+
+    // Zoom
+    const zoom = Shared.setupZoom(svg, g);
+    svg.call(zoom.transform, d3.zoomIdentity.translate(width * 0.22, height * 0.18).scale(0.85));
+    document.getElementById('btn-reset').onclick = () => {
+      svg.transition().duration(500)
+        .call(zoom.transform, d3.zoomIdentity.translate(width * 0.22, height * 0.18).scale(0.85));
+    };
+
+    // Tooltip
+    const tooltip = Shared.createTooltip();
+
+    // Custom sidebar
+    const sidebarEl = document.createElement('div');
+    sidebarEl.className = 'sidebar';
+    sidebarEl.innerHTML = `
+      <button class="sidebar-close">&times;</button>
+      <h2 class="sb-name"></h2>
+      <div class="sb-category"></div>
+      <div class="sb-desc"></div>
+      <h3>Active Phases</h3>
+      <ul class="sb-phase-list"></ul>
+    `;
+    document.body.appendChild(sidebarEl);
+    sidebarEl.querySelector('.sidebar-close').onclick = () => sidebarEl.classList.remove('open');
+
+    // Layout
+    const labelW = 150;
+    const cellW = 130;
+    const cellH = 44;
+    const headerH = 50;
+    const cellPad = 4;
+    const phaseColors = ['#7C3AED', '#2563EB', '#0D9488', '#D97706', '#EA580C', '#059669'];
+
+    // Highlight overlay (reused)
+    let highlightRect = null;
+
+    function clearHighlights() {
+      if (highlightRect) { highlightRect.remove(); highlightRect = null; }
+      g.selectAll('.cell-rect').style('opacity', null);
+    }
+
+    // Column headers
+    phases.forEach((phase, pi) => {
+      const x = labelW + pi * cellW + cellW / 2;
+
+      g.append('text')
+        .attr('class', 'col-header')
+        .attr('x', x)
+        .attr('y', headerH - 12)
+        .attr('fill', phaseColors[pi])
+        .style('cursor', 'pointer')
+        .text(phase)
+        .on('click', () => {
+          clearHighlights();
+          // Highlight column
+          highlightRect = g.append('rect')
+            .attr('class', 'highlight-overlay')
+            .attr('x', labelW + pi * cellW)
+            .attr('y', headerH)
+            .attr('width', cellW)
+            .attr('height', tools.length * cellH)
+            .attr('rx', 4);
+
+          // Show sidebar with all tools active in this phase
+          sidebarEl.querySelector('.sb-name').textContent = phase;
+          sidebarEl.querySelector('.sb-category').textContent = `Phase ${pi + 1} of ${phases.length}`;
+          sidebarEl.querySelector('.sb-desc').textContent = `Tools active during the ${phase} phase`;
+          const ul = sidebarEl.querySelector('.sb-phase-list');
+          ul.innerHTML = '';
+          tools.forEach(tool => {
+            const val = matrix[tool.id] && matrix[tool.id][phase];
+            if (val) {
+              const li = document.createElement('li');
+              li.innerHTML = `${tool.name}<span class="phase-name">${val}</span>`;
+              ul.appendChild(li);
+            }
+          });
+          sidebarEl.classList.add('open');
+        });
+
+      // Column separator line
+      g.append('line')
+        .attr('x1', labelW + pi * cellW).attr('y1', headerH)
+        .attr('x2', labelW + pi * cellW).attr('y2', headerH + tools.length * cellH)
+        .attr('stroke', '#334155')
+        .attr('stroke-width', 0.5)
+        .attr('opacity', 0.5);
+    });
+
+    // Row labels and cells
+    tools.forEach((tool, ti) => {
+      const y = headerH + ti * cellH;
+      const toolColor = Shared.color(tool.category);
+
+      // Row label with color dot
+      g.append('circle')
+        .attr('cx', labelW - 18)
+        .attr('cy', y + cellH / 2)
+        .attr('r', 5)
+        .attr('fill', toolColor);
+
+      g.append('text')
+        .attr('class', 'row-label')
+        .attr('x', labelW - 28)
+        .attr('y', y + cellH / 2 + 4)
+        .text(tool.name)
+        .on('click', () => {
+          clearHighlights();
+          // Highlight row
+          highlightRect = g.append('rect')
+            .attr('class', 'highlight-overlay')
+            .attr('x', labelW)
+            .attr('y', y)
+            .attr('width', phases.length * cellW)
+            .attr('height', cellH)
+            .attr('rx', 4);
+
+          // Show sidebar with all phases for this tool
+          sidebarEl.querySelector('.sb-name').textContent = tool.name;
+          sidebarEl.querySelector('.sb-category').textContent = tool.category;
+          sidebarEl.querySelector('.sb-desc').textContent = `${tool.name} usage across lifecycle phases`;
+          const ul = sidebarEl.querySelector('.sb-phase-list');
+          ul.innerHTML = '';
+          phases.forEach(phase => {
+            const val = matrix[tool.id] && matrix[tool.id][phase];
+            if (val) {
+              const li = document.createElement('li');
+              li.innerHTML = `${val}<span class="phase-name">${phase}</span>`;
+              ul.appendChild(li);
+            }
+          });
+          sidebarEl.classList.add('open');
+        });
+
+      // Row separator line
+      g.append('line')
+        .attr('x1', labelW).attr('y1', y)
+        .attr('x2', labelW + phases.length * cellW).attr('y2', y)
+        .attr('stroke', '#334155')
+        .attr('stroke-width', 0.5)
+        .attr('opacity', 0.5);
+
+      // Cells
+      phases.forEach((phase, pi) => {
+        const x = labelW + pi * cellW;
+        const val = matrix[tool.id] && matrix[tool.id][phase];
+        const active = !!val;
+
+        const cellG = g.append('g');
+
+        const rect = cellG.append('rect')
+          .attr('class', 'cell-rect' + (active ? '' : ' inactive'))
+          .attr('x', x + cellPad)
+          .attr('y', y + cellPad)
+          .attr('width', cellW - cellPad * 2)
+          .attr('height', cellH - cellPad * 2)
+          .attr('rx', 6)
+          .attr('fill', active ? toolColor : '#0F172A')
+          .attr('opacity', active ? 0.7 : 0.3)
+          .attr('stroke', active ? toolColor : '#334155')
+          .attr('stroke-width', active ? 1 : 0.5);
+
+        if (active) {
+          // Truncated description text inside cell
+          const maxChars = 18;
+          const displayText = val.length > maxChars ? val.slice(0, maxChars) + '...' : val;
+          cellG.append('text')
+            .attr('class', 'cell-text')
+            .attr('x', x + cellW / 2)
+            .attr('y', y + cellH / 2 + 3)
+            .text(displayText);
+
+          // Hover tooltip
+          cellG.on('mouseover', (event) => {
+            tooltip.show({ name: tool.name, category: phase, description: val }, event);
+          });
+          cellG.on('mousemove', (event) => {
+            tooltip.show({ name: tool.name, category: phase, description: val }, event);
+          });
+          cellG.on('mouseout', () => tooltip.hide());
+
+          // Click sidebar
+          cellG.on('click', () => {
+            clearHighlights();
+            sidebarEl.querySelector('.sb-name').textContent = `${tool.name} — ${phase}`;
+            sidebarEl.querySelector('.sb-category').textContent = tool.category;
+            sidebarEl.querySelector('.sb-desc').textContent = val;
+            const ul = sidebarEl.querySelector('.sb-phase-list');
+            ul.innerHTML = '';
+            // Show all phases for this tool
+            phases.forEach(p => {
+              const v = matrix[tool.id] && matrix[tool.id][p];
+              if (v) {
+                const li = document.createElement('li');
+                li.innerHTML = `${v}<span class="phase-name">${p}${p === phase ? ' (current)' : ''}</span>`;
+                ul.appendChild(li);
+              }
+            });
+            sidebarEl.classList.add('open');
+          });
+        }
+      });
+    });
+
+    // Bottom border
+    g.append('line')
+      .attr('x1', labelW).attr('y1', headerH + tools.length * cellH)
+      .attr('x2', labelW + phases.length * cellW).attr('y2', headerH + tools.length * cellH)
+      .attr('stroke', '#334155')
+      .attr('stroke-width', 0.5)
+      .attr('opacity', 0.5);
+
+    // Right border
+    g.append('line')
+      .attr('x1', labelW + phases.length * cellW).attr('y1', headerH)
+      .attr('x2', labelW + phases.length * cellW).attr('y2', headerH + tools.length * cellH)
+      .attr('stroke', '#334155')
+      .attr('stroke-width', 0.5)
+      .attr('opacity', 0.5);
+
+    // Legend
+    Shared.createLegend(categories);
+
+    // Search
+    const searchInput = document.getElementById('search');
+    searchInput.addEventListener('input', () => {
+      const q = searchInput.value.toLowerCase().trim();
+      clearHighlights();
+      if (!q) {
+        g.selectAll('.cell-rect').style('opacity', null);
+        g.selectAll('.row-label').style('opacity', null);
+        return;
+      }
+      tools.forEach((tool, ti) => {
+        const match = tool.name.toLowerCase().includes(q) || tool.category.toLowerCase().includes(q);
+        g.selectAll('.row-label').filter((d, i) => i === ti).style('opacity', match ? 1 : 0.2);
+      });
+    });
+
+    // Background click
+    svg.on('click', (e) => {
+      if (e.target === svg.node()) {
+        sidebarEl.classList.remove('open');
+        clearHighlights();
+      }
+    });
+  })();
+  </script>
+</body>
+</html>
