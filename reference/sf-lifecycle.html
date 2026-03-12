@@ -116,25 +116,8 @@
 
     // ── Arrow markers ──
     const defs = svg.append('defs');
-    defs.append('marker')
-      .attr('id', 'arrow')
-      .attr('viewBox', '0 0 10 10')
-      .attr('refX', 9).attr('refY', 5)
-      .attr('markerWidth', 10).attr('markerHeight', 10)
-      .attr('orient', 'auto')
-      .append('path')
-      .attr('d', 'M0,1 L8,5 L0,9 Z')
-      .attr('fill', '#7DD3FC');
-
-    defs.append('marker')
-      .attr('id', 'arrow-back')
-      .attr('viewBox', '0 0 10 10')
-      .attr('refX', 9).attr('refY', 5)
-      .attr('markerWidth', 10).attr('markerHeight', 10)
-      .attr('orient', 'auto')
-      .append('path')
-      .attr('d', 'M0,1 L8,5 L0,9 Z')
-      .attr('fill', '#FACC15');
+    Shared.createArrowMarker(defs, 'arrow', '#7DD3FC', { refX: 10, size: 9 });
+    Shared.createArrowMarker(defs, 'arrow-back', '#FACC15', { refX: 10, size: 9 });
 
     // ── Edges ──
     const nodeMap = {};
@@ -160,13 +143,12 @@
       const samePhase = s.phase === t.phase;
       const isBack = samePhase && t.px < s.px;
       const isCrossPhase = !samePhase;
-      const r = 12;
 
       const path = edgeG.append('path')
         .attr('class', isBack ? 'lc-edge-back' : 'lc-edge')
         .attr('stroke', isBack ? '#FACC15' : '#7DD3FC')
-        .attr('stroke-width', isBack ? 3.5 : 3)
-        .attr('opacity', isBack ? 1 : 0.9)
+        .attr('stroke-width', isBack ? 2.5 : 2)
+        .attr('opacity', isBack ? 0.9 : 0.8)
         .attr('marker-end', isBack ? 'url(#arrow-back)' : 'url(#arrow)');
 
       let labelX, labelY;
@@ -174,29 +156,34 @@
       if (isBack) {
         const src = getAnchor(s, 'bottom');
         const tgt = getAnchor(t, 'bottom');
-        const arcY = phaseY[s.phase] + laneH + 40;
+        // Adaptive arc depth based on distance between nodes
+        const dist = Math.abs(src.x - tgt.x);
+        const arcDepth = Math.max(30, dist * 0.25);
+        const arcY = phaseY[s.phase] + laneH + arcDepth;
         path.attr('d', `M${src.x},${src.y} C${src.x},${arcY} ${tgt.x},${arcY} ${tgt.x},${tgt.y}`);
         labelX = (src.x + tgt.x) / 2;
         labelY = arcY + 16;
       } else if (isCrossPhase) {
         const src = getAnchor(s, 'bottom');
         const tgt = getAnchor(t, 'top');
-
-        // Find the phase indices
         const sPhaseIdx = phases.findIndex(p => p.id === s.phase);
         const tPhaseIdx = phases.findIndex(p => p.id === t.phase);
 
         if (Math.abs(tPhaseIdx - sPhaseIdx) === 1 && Math.abs(s.px - t.px) < gapX * 0.5) {
-          // Direct vertical
-          path.attr('d', `M${src.x},${src.y} L${tgt.x},${tgt.y}`);
+          // Smooth vertical curve instead of straight line
+          const midY = (src.y + tgt.y) / 2;
+          path.attr('d', `M${src.x},${src.y} C${src.x},${midY} ${tgt.x},${midY} ${tgt.x},${tgt.y}`);
         } else {
-          // Stepped path
+          // Smooth stepped path with adaptive corner radius
+          const hDist = Math.abs(tgt.x - src.x);
+          const r = Math.min(24, hDist * 0.15, 30);
           const midY = (phaseY[s.phase] + laneH + phaseY[t.phase]) / 2;
+          const dir = tgt.x > src.x ? 1 : -1;
           path.attr('d', [
             `M${src.x},${src.y}`,
             `L${src.x},${midY - r}`,
-            `Q${src.x},${midY} ${src.x + (tgt.x > src.x ? r : -r)},${midY}`,
-            `L${tgt.x - (tgt.x > src.x ? r : -r)},${midY}`,
+            `Q${src.x},${midY} ${src.x + dir * r},${midY}`,
+            `L${tgt.x - dir * r},${midY}`,
             `Q${tgt.x},${midY} ${tgt.x},${midY + r}`,
             `L${tgt.x},${tgt.y}`
           ].join(' '));
@@ -204,11 +191,14 @@
         labelX = (src.x + tgt.x) / 2;
         labelY = (src.y + tgt.y) / 2 - 8;
       } else {
+        // Forward edge — subtle curve instead of straight line
         const src = getAnchor(s, 'right');
         const tgt = getAnchor(t, 'left');
-        path.attr('d', `M${src.x},${src.y} L${tgt.x},${tgt.y}`);
-        labelX = (src.x + tgt.x) / 2;
-        labelY = (src.y + tgt.y) / 2 - 10;
+        const midX = (src.x + tgt.x) / 2;
+        const curveOffset = -8; // slight upward arc
+        path.attr('d', `M${src.x},${src.y} Q${midX},${src.y + curveOffset} ${tgt.x},${tgt.y}`);
+        labelX = midX;
+        labelY = (src.y + tgt.y) / 2 - 14;
       }
 
       if (e.label) {

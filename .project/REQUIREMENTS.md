@@ -42,6 +42,12 @@ A standardized framework for Salesforce consulting engagements, built on Claude 
 | NFR-003 | Toolstack Sync with Diagrams | P1 | DRAFT |
 | NFR-004 | Professional Quality for Practice Leader Pitch | P0 | DRAFT |
 | NFR-005 | Offline-First with Online Enhancement | P2 | DRAFT |
+| REQ-021 | sf-architect-solutioning Skill | P0 | DRAFT |
+| REQ-022 | Project Wiki Framework | P1 | DRAFT |
+| REQ-023 | Design Standards (Two-Layer) | P1 | DRAFT |
+| REQ-024 | Component Registry | P0 | DRAFT |
+| REQ-025 | Backlog-to-Linear Sync | P1 | DRAFT |
+| REQ-026 | Global Project Instructions (Rules 14-16) | P0 | DRAFT |
 
 ---
 
@@ -332,7 +338,7 @@ The framework includes 8 interactive HTML diagrams built with D3.js, following t
 **Acceptance Criteria:**
 - Each diagram is a standalone HTML file with embedded D3.js
 - Diagrams are interactive (zoom, pan, click for details)
-- Data is externalized in `diagrams/data/` JS files
+- Data is externalized in `reference/data/` JS files
 - Diagrams adapt to the engagement (products, entry point, team size)
 - An `index.html` file links to all diagrams
 
@@ -598,9 +604,9 @@ Per the existing toolstack sync rule, any tools added by this framework must be 
 
 **Acceptance Criteria:**
 - `my-toolstack.md` is updated with all new tools (sf-project-init, MCP servers, sf-skills)
-- `diagrams/data/architecture-data.js` includes new nodes and edges
-- `diagrams/data/lifecycle-data.js` includes SF project initialization steps
-- `diagrams/data/devloop-data.js` includes SF development loop tools
+- `reference/data/architecture-data.js` includes new nodes and edges
+- `reference/data/lifecycle-data.js` includes SF project initialization steps
+- `reference/data/devloop-data.js` includes SF development loop tools
 - Diagrams render correctly after updates
 
 ---
@@ -633,3 +639,107 @@ The framework must function fully offline (curated reference material, templates
 - Reference material is bundled locally
 - Context7 and Linear integrations degrade gracefully when unavailable
 - Clear messaging when online features are unavailable
+
+---
+
+### REQ-021: sf-architect-solutioning Skill
+
+**Priority:** P0
+**Status:** DRAFT
+
+A standalone Claude Code skill that acts as a Certified Salesforce Technical Architect. Triggers when the user provides requirements to architect and solution. Enforces a pre-implementation documentation gate, builds structured solution plans, and ensures all living documents stay current during implementation.
+
+**Acceptance Criteria:**
+- Skill is defined in `skills/sf-architect-solutioning/SKILL.md` and installable to `~/.claude/skills/sf-architect-solutioning/`
+- Pushes back on vague requirements and asks 3-5 clarifying questions
+- Enforces pre-implementation gate (BRD, technical spec, data model, component registry, design standards must be current)
+- Produces structured solution plan with components, patterns, governor limit assessment, security considerations, and trade-offs
+- Waits for user approval before implementation
+- Updates all living documents during implementation (NON-NEGOTIABLE)
+- Includes reference files: solutioning checklist, solution plan template, architectural patterns
+
+---
+
+### REQ-022: Project Wiki Framework
+
+**Priority:** P1
+**Status:** DRAFT
+
+A structured wiki generated into scaffolded projects during sf-project-init Phase 3. Provides organized documentation for organization context, ways of working, and per-application-area details.
+
+**Acceptance Criteria:**
+- Wiki structure generated under `wiki/` directory during scaffolding
+- Includes `organization-overview.md`, `ways-of-working/` (6 pages), and `applications/` (per-product subdirectories)
+- Application subdirectories created based on Round 3 product selections (e.g., `sales-cloud/`, `service-cloud/`)
+- Each application area has: overview.md, technical-specs.md, requirements.md, process-flows.md
+- Wiki pages are automatically updated by the sf-architect-solutioning skill when solutions affect an application area
+- Templates defined in `skills/sf-project-init/references/document-templates.md`
+
+---
+
+### REQ-023: Design Standards (Two-Layer)
+
+**Priority:** P1
+**Status:** DRAFT
+
+A two-layer design standards document generated at `wiki/ways-of-working/design-standards.md`. Layer 1 contains framework defaults (16 Golden Rules, Well-Architected patterns). Layer 2 contains client-specific standards captured during interview Round 8.
+
+**Acceptance Criteria:**
+- Design standards template defined in `skills/sf-project-init/references/document-templates.md`
+- Layer 1 (framework defaults) always included with 16 Golden Rules and Well-Architected patterns
+- Layer 2 (client-specific) populated from Round 8 interview answers about client design standards
+- Workflow rule enforces checking design standards before implementation
+- Client standards override framework defaults when conflicting
+
+---
+
+### REQ-024: Component Registry
+
+**Priority:** P0
+**Status:** DRAFT
+
+A comprehensive metadata inventory (`docs/COMPONENT_REGISTRY.md`) generated as a NON-OPTIONAL living document. Tracks every component in the Salesforce org across 12 categories.
+
+**Acceptance Criteria:**
+- Generated during scaffolding with empty category tables (NON-OPTIONAL — always included)
+- Tracks 12 categories: Custom Objects, Custom Fields, Apex Classes, Apex Triggers, Flows, LWC, Permission Sets, Validation Rules, Page Layouts, Custom Metadata Types, Platform Events, Named Credentials
+- Summary table with category counts and last-updated dates
+- Mandatory update on every component create/modify/delete (Rule 15)
+- Cross-references to BL-XXX and REQ-XXX identifiers
+- Distinct from CODE_ATLAS.md (code navigation guide vs. metadata inventory)
+
+---
+
+### REQ-025: Backlog-to-Linear Sync
+
+**Priority:** P1
+**Status:** DRAFT
+
+An opt-in GitHub Actions workflow that syncs Linear project state to `docs/BACKLOG.md` daily. Linear is the source of truth.
+
+**Acceptance Criteria:**
+- Opt-in during Round 5 of the interview
+- Generates `.github/workflows/linear-sync.yml` (runs weekdays 8 AM UTC)
+- Generates `scripts/linear-sync.js` using `@linear/sdk`
+- Linear state overwrites BACKLOG.md sync summary section
+- Items in BACKLOG.md not found in Linear flagged with `[NOT IN LINEAR]`
+- One-way sync (Linear → BACKLOG.md) to avoid merge conflicts
+- Creates PR for review rather than committing directly
+- Requires GitHub Secrets: LINEAR_API_KEY, LINEAR_TEAM_ID, LINEAR_PROJECT_ID
+
+---
+
+### REQ-026: Global Project Instructions (Rules 14-16)
+
+**Priority:** P0
+**Status:** DRAFT
+
+Three new Golden Rules added to the CLAUDE.md template, expanding from 13 to 16 rules. These rules apply to every scaffolded project.
+
+**Acceptance Criteria:**
+- Rule 14 (Living Document Sync): All living documents kept in sync when modifying code
+- Rule 15 (Component Registry Updates): Every component change updates COMPONENT_REGISTRY.md immediately (non-negotiable)
+- Rule 16 (UI Testing with Playwright): Ask user about screenshot loop before UI work
+- New event-to-action rows added to CLAUDE.md Section 4
+- Rules documented in `skills/sf-project-init/references/workflow-rules.md` under "Global Project Constraints"
+- Rules embedded in the CLAUDE.md template in `skills/sf-project-init/references/document-templates.md`

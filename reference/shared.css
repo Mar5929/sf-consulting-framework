@@ -293,14 +293,16 @@ svg.diagram {
 /* ---- Edge ---- */
 .edge {
   stroke: #64748B;
-  stroke-width: 2;
+  stroke-width: 1.8;
   fill: none;
-  opacity: .65;
+  opacity: .55;
+  stroke-linecap: round;
+  transition: opacity .2s, stroke-width .2s;
 }
 
 .edge.highlighted {
-  opacity: 1;
-  stroke-width: 3;
+  opacity: .9;
+  stroke-width: 2.5;
 }
 
 /* ---- Phase Labels (Lifecycle) ---- */

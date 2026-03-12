@@ -64,21 +64,13 @@
     const defs = svg.append('defs');
     const g = svg.append('g');
 
-    // Arrow markers
-    defs.append('marker')
-      .attr('id', 'arrow-fwd')
-      .attr('viewBox', '0 0 10 8')
-      .attr('refX', 28).attr('refY', 4)
-      .attr('markerWidth', 8).attr('markerHeight', 6)
-      .attr('orient', 'auto')
-      .append('path')
-      .attr('d', 'M0,0 L10,4 L0,8 Z')
-      .attr('fill', '#64748B');
+    // Arrow markers — consistent sizing
+    Shared.createArrowMarker(defs, 'arrow-fwd', '#64748B', { refX: 22, size: 8 });
 
     defs.append('marker')
       .attr('id', 'arrow-back')
       .attr('viewBox', '0 0 10 8')
-      .attr('refX', -18).attr('refY', 4)
+      .attr('refX', -14).attr('refY', 4)
       .attr('markerWidth', 8).attr('markerHeight', 6)
       .attr('orient', 'auto-start-reverse')
       .append('path')
@@ -172,8 +164,9 @@
       .join('g')
       .attr('class', 'edge-group');
 
-    edgeEls.append('line')
+    edgeEls.append('path')
       .attr('class', 'edge')
+      .attr('fill', 'none')
       .attr('marker-end', 'url(#arrow-fwd)')
       .attr('marker-start', d => d.bidirectional ? 'url(#arrow-back)' : null);
 
@@ -194,7 +187,7 @@
     );
 
     // Interactivity
-    const edgeLines = edgeEls.selectAll('line');
+    const edgeLines = edgeEls.selectAll('path');
     nodeEls
       .on('mouseover', (e, d) => tooltip.show(d, e))
       .on('mousemove', (e, d) => tooltip.show(d, e))
@@ -213,13 +206,18 @@
 
     // Tick
     simulation.on('tick', () => {
-      edgeEls.selectAll('line')
-        .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
-        .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+      edgeEls.selectAll('path')
+        .attr('d', (d, i) => {
+          const sx = d.source.x, sy = d.source.y;
+          const tx = d.target.x, ty = d.target.y;
+          const sign = i % 2 === 0 ? 1 : -1;
+          const offset = 16 + (i % 4) * 5;
+          return Shared.curvedEdgePath(sx, sy, tx, ty, offset * sign);
+        });
 
       edgeLabels
         .attr('x', d => (d.source.x + d.target.x) / 2)
-        .attr('y', d => (d.source.y + d.target.y) / 2 - 6);
+        .attr('y', d => (d.source.y + d.target.y) / 2 - 8);
 
       nodeEls.attr('transform', d => `translate(${d.x},${d.y})`);
     });

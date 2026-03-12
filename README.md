@@ -8,7 +8,9 @@ Starting a new Salesforce engagement means hours of boilerplate: creating projec
 
 The `sf-project-init` skill acts as an **engagement architect and onboarding interviewer**. It asks smart, context-aware questions across 8 rounds — adapting to your engagement type (greenfield, build phase, managed services, or rescue) — then generates a complete, opinionated project scaffold tailored to your answers.
 
-The framework encodes best practices from real Salesforce consulting engagements: the 13 Golden Rules for Apex development, GitFlow branching strategies, Well-Architected patterns, naming conventions, and deliverable templates. You get a production-ready project structure in minutes instead of days.
+The `sf-architect-solutioning` skill acts as a **Certified Salesforce Technical Architect**. When you feed it a requirement, it pushes back on vague specs, asks clarifying questions, ensures all documentation is current, and builds a structured solution plan before any code is written.
+
+The framework encodes best practices from real Salesforce consulting engagements: the 16 Golden Rules for Apex development, GitFlow branching strategies, Well-Architected patterns, naming conventions, deliverable templates, a project wiki, and a comprehensive component registry. You get a production-ready project structure in minutes instead of days.
 
 ## How It Works
 
@@ -37,7 +39,7 @@ The interview is conversational — 3-5 questions at a time, with follow-ups tha
 | 3 | Products & Scope | Salesforce clouds, AppExchange packages, integrations, data migration needs |
 | 4 | Entry-Point Deep Dive | Adaptive questions based on entry point — discovery needs, sprint setup, SLAs, or audit priorities |
 | 5 | Deliverables & Docs | Client deliverables, Linear project setup, living documents (BACKLOG, REQUIREMENTS, etc.) |
-| 6 | Dev Standards & CI/CD | Branching strategy, GitHub Actions pipelines, code review policy, test coverage, the 13 Golden Rules |
+| 6 | Dev Standards & CI/CD | Branching strategy, GitHub Actions pipelines, code review policy, test coverage, the 16 Golden Rules |
 | 7 | Security & Compliance | Data classification, HIPAA/SOX/GDPR, sharing model, Shield encryption, field-level security |
 | 8 | Conventions & Preferences | Naming conventions, communication style, MCP server settings, engagement-specific rules |
 
@@ -47,7 +49,7 @@ After approval, the skill creates a complete SFDX project structure:
 
 ```
 acme-sales-cloud/
-├── CLAUDE.md                          # Full engagement context + 13 Golden Rules
+├── CLAUDE.md                          # Full engagement context + 16 Golden Rules
 ├── README.md                          # Project overview + getting started
 ├── GETTING_STARTED.md                 # Onboarding guide for new team members
 ├── sfdx-project.json                  # SFDX project definition
@@ -61,7 +63,24 @@ acme-sales-cloud/
 │   ├── DECISIONS.md                   # Architecture decision records
 │   ├── CHANGELOG.md                   # Change history
 │   ├── DATA_MODEL.md                  # Object model & relationships
-│   └── CODE_ATLAS.md                  # Codebase navigation guide
+│   ├── CODE_ATLAS.md                  # Codebase navigation guide
+│   └── COMPONENT_REGISTRY.md          # Comprehensive component inventory (non-optional)
+│
+├── wiki/                              # Project wiki
+│   ├── organization-overview.md       # Client & engagement context
+│   ├── ways-of-working/              # Team processes & standards
+│   │   ├── design-standards.md        # Framework + client-specific standards
+│   │   ├── deployment-cicd.md
+│   │   ├── sandbox-strategy.md
+│   │   ├── team-makeup.md
+│   │   ├── recurring-meetings.md
+│   │   └── roadmap-timelines.md
+│   └── applications/                  # Per-product documentation
+│       └── {product-name}/            # e.g., sales-cloud/, service-cloud/
+│           ├── overview.md
+│           ├── technical-specs.md
+│           ├── requirements.md
+│           └── process-flows.md
 │
 ├── deliverables/                      # Client-facing documents
 │   ├── brd/                           # Business Requirements Document
@@ -88,11 +107,14 @@ acme-sales-cloud/
 ├── config/
 │   └── project-scratch-def.json       # Scratch org definition
 │
-├── scripts/deploy/                    # Deployment helper scripts
+├── scripts/
+│   ├── deploy/                        # Deployment helper scripts
+│   └── linear-sync.js                 # Backlog sync from Linear (optional)
 │
 └── .github/workflows/
     ├── sf-validate.yml                # PR validation pipeline
-    └── sf-deploy.yml                  # Deployment pipeline
+    ├── sf-deploy.yml                  # Deployment pipeline
+    └── linear-sync.yml               # Daily Linear → BACKLOG.md sync (optional)
 ```
 
 The exact deliverables and docs folders are tailored to your engagement type. A rescue engagement gets an Org Assessment and Rescue Assessment; a greenfield gets a BRD and Training Materials.
@@ -105,7 +127,8 @@ Here's what it looks like to scaffold a project for a fictional **Acme Corp** Sa
 
 ```bash
 git clone https://github.com/mrihmrihm/sf-consulting-framework.git
-cp -r sf-consulting-framework/skill/ ~/.claude/skills/sf-project-init/
+cp -r sf-consulting-framework/skills/sf-project-init/ ~/.claude/skills/sf-project-init/
+cp -r sf-consulting-framework/skills/sf-architect-solutioning/ ~/.claude/skills/sf-architect-solutioning/
 ```
 
 ### Step 2: Create a project directory and invoke the skill
@@ -183,7 +206,7 @@ Round 5 — Deliverables:
 
 > **You:** Yes to all deliverables and Linear. Add a DECISIONS.md and DATA_MODEL.md to the living docs.
 
-Rounds 6-8 cover dev standards (GitFlow, 85% test coverage, the 13 Golden Rules), security (SOX compliance, sharing model), and naming conventions. The skill presents its recommendations and you confirm or customize.
+Rounds 6-8 cover dev standards (GitFlow, 85% test coverage, the 16 Golden Rules), security (SOX compliance, sharing model), and naming conventions. The skill presents its recommendations and you confirm or customize.
 
 ### Step 4: Creation summary
 
@@ -195,7 +218,9 @@ After 8 rounds, the skill presents everything it will create:
 > - `CLAUDE.md` — 13-section engagement context with Golden Rules, SOX compliance notes
 > - `sfdx-project.json`, `.forceignore`, `.gitignore`, `README.md`, `GETTING_STARTED.md`
 >
-> **Living Docs** (7 files) — BACKLOG, REQUIREMENTS, TECHNICAL_SPEC, DECISIONS, CHANGELOG, DATA_MODEL, CODE_ATLAS
+> **Living Docs** (8 files) — BACKLOG, REQUIREMENTS, TECHNICAL_SPEC, DECISIONS, CHANGELOG, DATA_MODEL, CODE_ATLAS, COMPONENT_REGISTRY
+>
+> **Project Wiki** — organization-overview, ways-of-working (design standards, deployment, sandbox strategy, team, meetings, roadmap), applications (sales-cloud/, service-cloud/)
 >
 > **Deliverables** (6 folders) — BRD, SDD, data migration + field mappings, test plans, architecture, training
 >
@@ -232,52 +257,65 @@ From here, the CLAUDE.md persists all engagement context across sessions — eve
 
 ## Installation
 
-Install the `sf-project-init` skill into your Claude Code setup:
+Install the skills into your Claude Code setup:
 
 1. **Clone this repo:**
    ```bash
    git clone https://github.com/mrihmrihm/sf-consulting-framework.git
    ```
 
-2. **Copy the skill to your Claude Code skills directory:**
+2. **Copy both skills to your Claude Code skills directory:**
    ```bash
-   cp -r sf-consulting-framework/skill/ ~/.claude/skills/sf-project-init/
+   cp -r sf-consulting-framework/skills/sf-project-init/ ~/.claude/skills/sf-project-init/
+   cp -r sf-consulting-framework/skills/sf-architect-solutioning/ ~/.claude/skills/sf-architect-solutioning/
    ```
 
-3. **Invoke the skill in Claude Code:**
+3. **Alternatively, ask Claude Code to install them for you:**
    ```
-   /sf-project-init
+   Please install the skills from ./skills/ into my Claude Code skills directory (~/.claude/skills/).
+   Copy each subfolder (sf-project-init and sf-architect-solutioning) as-is.
    ```
 
-   The skill will walk you through a structured interview, then scaffold project documentation, naming conventions, CI/CD templates, and more — all tailored to the engagement.
+4. **Invoke the skills in Claude Code:**
+   ```
+   /sf-project-init                  # Scaffold a new engagement
+   /sf-architect-solutioning         # Architect a requirement (within an existing project)
+   ```
+
+   `sf-project-init` walks you through an 8-round interview and scaffolds the full project. `sf-architect-solutioning` activates when you feed it requirements to design and build.
 
 ## Diagrams
 
-Interactive HTML diagrams that visualize the framework. Open any file in a browser, or start with `index.html` for the full set.
+Interactive HTML diagrams that visualize the framework. Open any file in a browser, or start with `reference/index.html` for the full set.
 
 | Diagram | Description |
 |---------|-------------|
-| [Framework Overview](diagrams/sf-framework-overview.html) | High-level view of the consulting methodology |
-| [Project Lifecycle](diagrams/sf-lifecycle.html) | Phases from discovery through hypercare |
-| [Dev Loop](diagrams/sf-devloop.html) | Iterative development cycle within a sprint |
-| [CI/CD Pipeline](diagrams/sf-cicd-pipeline.html) | Deployment pipeline across environments |
-| [Integration Flow](diagrams/sf-integration-flow.html) | System integration architecture patterns |
-| [Scenario Flows](diagrams/sf-scenario-flows.html) | Common engagement scenario walkthroughs |
-| [Tech Stack](diagrams/sf-tech-stack.html) | Technology components and their relationships |
-| [Tool Mapping](diagrams/sf-tool-mapping.html) | Tools mapped to framework phases |
+| [Framework Overview](reference/sf-framework-overview.html) | High-level view of the consulting methodology |
+| [Project Lifecycle](reference/sf-lifecycle.html) | Phases from discovery through hypercare |
+| [Dev Loop](reference/sf-devloop.html) | Iterative development cycle within a sprint |
+| [CI/CD Pipeline](reference/sf-cicd-pipeline.html) | Deployment pipeline across environments |
+| [Integration Flow](reference/sf-integration-flow.html) | System integration architecture patterns |
+| [Scenario Flows](reference/sf-scenario-flows.html) | Common engagement scenario walkthroughs |
+| [Tech Stack](reference/sf-tech-stack.html) | Technology components and their relationships |
+| [Tool Mapping](reference/sf-tool-mapping.html) | Tools mapped to framework phases |
 
-## Framework Document
+## Framework Documents
 
-The complete methodology is documented in [salesforce-consulting-framework.docx](deliverables/salesforce-consulting-framework.docx) — a polished reference covering engagement types, delivery phases, governance, and best practices.
+The complete methodology is available in two formats:
+- [salesforce-consulting-framework.docx](reference/salesforce-consulting-framework.docx) — detailed reference covering engagement types, delivery phases, governance, and best practices
+- [salesforce-consulting-framework.pptx](reference/salesforce-consulting-framework.pptx) — executive presentation deck
 
 ## Repo Structure
 
 ```
 sf-consulting-framework/
-├── skill/              # Claude Code skill (sf-project-init) — installable
-│   ├── SKILL.md        # Skill definition + interview logic
-│   └── references/     # Supporting docs (products, naming, CI/CD templates, etc.)
-├── diagrams/           # 8 interactive HTML diagrams
-├── deliverables/       # Polished framework document (docx)
-└── .project/           # Internal project tracking
+├── skills/                             # Claude Code skills — copy to ~/.claude/skills/
+│   ├── sf-project-init/                # Engagement scaffolding (8-round interview → full SFDX project)
+│   │   ├── SKILL.md                    # Skill definition + interview logic
+│   │   └── references/                 # Products, naming, CI/CD templates, workflow rules, etc.
+│   └── sf-architect-solutioning/       # Technical solutioning (requirement → solution plan)
+│       ├── SKILL.md                    # Solutioning skill definition
+│       └── references/                 # Checklist, solution plan template, architectural patterns
+├── reference/                          # Interactive HTML diagrams + framework documents (docx, pptx)
+└── .project/                           # Internal project tracking
 ```

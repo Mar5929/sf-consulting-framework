@@ -68,7 +68,7 @@ Create the 8 interactive HTML diagrams with D3.js, following the existing diagra
 | BL-018 | Create Development Workflow diagram (HTML + data file) | P1 | DONE | REQ-011 |
 | BL-019 | Create Project Timeline diagram (HTML + data file) | P1 | DONE | REQ-011 |
 | BL-020 | Create Engagement Framework Overview diagram (HTML + data) | P1 | DONE | REQ-011 |
-| BL-021 | Update diagrams/index.html with SF diagram links | P1 | DONE | REQ-011 |
+| BL-021 | Update reference/index.html with SF diagram links | P1 | DONE | REQ-011 |
 
 ---
 
@@ -89,14 +89,34 @@ Update the claude-toolkit repo to integrate the new framework into the existing 
 | ID | Title | Priority | Status | Implements |
 |--------|--------------------------------------------------------------|----------|--------|------------------------------|
 | BL-023 | Update my-toolstack.md with SF tools and MCP servers | P0 | DONE | REQ-009, REQ-020, NFR-003 |
-| BL-024 | Update diagrams/data/architecture-data.js | P1 | DONE | NFR-003 |
-| BL-025 | Update diagrams/data/lifecycle-data.js | P1 | DONE | NFR-003 |
+| BL-024 | Update reference/data/architecture-data.js | P1 | DONE | NFR-003 |
+| BL-025 | Update reference/data/lifecycle-data.js | P1 | DONE | NFR-003 |
 | BL-026 | Update install.sh for sf-project-init skill | P0 | DONE | NFR-002 |
-| BL-027 | Update diagrams/index.html (main toolkit index) | P1 | DONE | NFR-003 |
+| BL-027 | Update reference/index.html (main toolkit index) | P1 | DONE | NFR-003 |
 
 ---
 
-## Phase 6: Polish & Quality
+## Phase 6: Framework Enhancements
+
+Expand the framework from a project scaffolding tool into a full consulting lifecycle platform.
+
+| ID | Title | Priority | Status | Implements |
+|--------|--------------------------------------------------------------|----------|-------------|------------------------------|
+| BL-029 | Create sf-architect-solutioning skill (SKILL.md + references)| P0 | DONE | REQ-021 |
+| BL-030 | Add wiki templates to document-templates.md | P1 | DONE | REQ-022 |
+| BL-031 | Add design standards template (two-layer) | P1 | DONE | REQ-023 |
+| BL-032 | Add component registry template | P0 | DONE | REQ-024 |
+| BL-033 | Add Linear sync workflow + script template | P1 | DONE | REQ-025 |
+| BL-034 | Add Golden Rules 14-16 + event-to-action rows | P0 | DONE | REQ-026 |
+| BL-035 | Update workflow-rules.md (wiki, registry, standards, global) | P0 | DONE | REQ-022, REQ-023, REQ-024, REQ-026 |
+| BL-036 | Wire wiki, registry, sync into sf-project-init/SKILL.md | P0 | DONE | REQ-022, REQ-024, REQ-025 |
+| BL-037 | Update README.md with new capabilities | P1 | DONE | All |
+| BL-038 | Update REQUIREMENTS.md with REQ-021 through REQ-026 | P0 | DONE | All |
+| BL-039 | Update BACKLOG.md with Phase 6 items | P0 | DONE | All |
+
+---
+
+## Phase 7: Polish & Quality
 
 Visual and UX improvements across all diagrams and deliverables.
 
@@ -133,6 +153,12 @@ Phase 4 (Document)
 
 Phase 5 (Integration)
   BL-023..BL-027 depend on Phase 2 + Phase 3 completion
+
+Phase 6 (Enhancements)
+  BL-029 independent (new skill)
+  BL-030..BL-035 depend on Phase 2 (modify existing reference files)
+  BL-036 depends on BL-029..BL-035 (wires everything into SKILL.md)
+  BL-037..BL-039 depend on BL-029..BL-036 (documentation updates)
 ```
 
 ---
@@ -142,6 +168,7 @@ Phase 5 (Integration)
 | ID | Completed | Notes |
 |-------------|-----------|-------|
 | BL-001–BL-027 | 2026-03-12 | All Phase 0–5 items completed. Phase 5 integration was done then superseded by repo reorganization. |
+| BL-029–BL-039 | 2026-03-12 | Phase 6 framework enhancements: architect skill, wiki, component registry, design standards, Linear sync, global rules. |
 
 ---
 

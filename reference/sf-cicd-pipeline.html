@@ -139,35 +139,49 @@
     const startX = 40;
     const startY = 0;
 
-    // Arrow marker
-    svg.append('defs').append('marker')
-      .attr('id', 'arrowhead')
-      .attr('viewBox', '0 0 10 8')
-      .attr('refX', 10).attr('refY', 4)
-      .attr('markerWidth', 10).attr('markerHeight', 8)
-      .attr('orient', 'auto')
-      .append('path')
-      .attr('d', 'M0,0 L10,4 L0,8 Z')
-      .attr('class', 'arrow-head');
+    // Arrow markers — per-gate with target environment color
+    const pipelineDefs = svg.append('defs');
+    Shared.createArrowMarker(pipelineDefs, 'arrowhead', '#64748B', { refX: 10, size: 9 });
+
+    // Create colored arrow markers for each gate transition
+    gates.forEach((gate, i) => {
+      const targetEnv = environments[i + 1];
+      const color = targetEnv ? targetEnv.color : '#64748B';
+      Shared.createArrowMarker(pipelineDefs, `arrowhead-${i}`, color, { refX: 10, size: 9 });
+    });
 
     // Draw connecting arrows first (behind cards)
     gates.forEach((gate, i) => {
       const x1 = startX + i * (cardW + gapX) + cardW;
       const x2 = startX + (i + 1) * (cardW + gapX);
       const y = startY + cardH / 2;
+      const midX = (x1 + x2) / 2;
 
-      // Arrow line
-      g.append('line')
+      // Gradient from source env color to target env color
+      const srcColor = environments[i].color;
+      const tgtColor = environments[i + 1] ? environments[i + 1].color : srcColor;
+      const gradId = `grad-${i}`;
+      const grad = pipelineDefs.append('linearGradient')
+        .attr('id', gradId)
+        .attr('x1', '0%').attr('y1', '0%')
+        .attr('x2', '100%').attr('y2', '0%');
+      grad.append('stop').attr('offset', '0%').attr('stop-color', srcColor).attr('stop-opacity', 0.6);
+      grad.append('stop').attr('offset', '100%').attr('stop-color', tgtColor).attr('stop-opacity', 0.9);
+
+      // Arrow path with subtle arc
+      g.append('path')
         .attr('class', 'arrow-line')
-        .attr('x1', x1).attr('y1', y)
-        .attr('x2', x2 - 4).attr('y2', y)
-        .attr('marker-end', 'url(#arrowhead)');
+        .attr('d', `M${x1},${y} Q${midX},${y - 10} ${x2 - 4},${y}`)
+        .attr('stroke', `url(#${gradId})`)
+        .attr('fill', 'none')
+        .attr('stroke-linecap', 'round')
+        .attr('marker-end', `url(#arrowhead-${i})`);
 
       // Gate label
       g.append('text')
         .attr('class', 'gate-label')
-        .attr('x', (x1 + x2) / 2)
-        .attr('y', y - 12)
+        .attr('x', midX)
+        .attr('y', y - 16)
         .text(gate.label);
     });
 

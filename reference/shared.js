@@ -187,11 +187,52 @@ const Shared = (() => {
   }
 
   // ── Edge Rendering ──
-  function drawEdges(g, edges) {
+  function drawEdges(g, edges, opts = {}) {
+    const curved = opts.curved !== false; // default to curved
+    if (curved) {
+      return g.selectAll('.edge')
+        .data(edges)
+        .join('path')
+        .attr('class', 'edge')
+        .attr('fill', 'none');
+    }
     return g.selectAll('.edge')
       .data(edges)
       .join('line')
       .attr('class', 'edge');
+  }
+
+  // ── Curved Edge Path ──
+  // Returns SVG path d string for a quadratic bezier with perpendicular offset.
+  // Positive offset curves left (relative to edge direction), negative curves right.
+  function curvedEdgePath(sx, sy, tx, ty, offset = 20) {
+    const dx = tx - sx;
+    const dy = ty - sy;
+    const len = Math.sqrt(dx * dx + dy * dy) || 1;
+    // Cap curvature magnitude at 15% of edge length
+    const sign = offset < 0 ? -1 : 1;
+    const absOff = Math.abs(offset);
+    const curv = sign * Math.min(absOff, len * 0.15);
+    const mx = (sx + tx) / 2 + (-dy / len) * curv;
+    const my = (sy + ty) / 2 + (dx / len) * curv;
+    return `M${sx},${sy}Q${mx},${my} ${tx},${ty}`;
+  }
+
+  // ── Arrow Marker Factory ──
+  function createArrowMarker(defs, id, color, opts = {}) {
+    const refX = opts.refX || 10;
+    const size = opts.size || 8;
+    const vb = opts.viewBox || '0 0 10 8';
+    defs.append('marker')
+      .attr('id', id)
+      .attr('viewBox', vb)
+      .attr('refX', refX).attr('refY', 4)
+      .attr('markerWidth', size).attr('markerHeight', size * 0.75)
+      .attr('orient', 'auto')
+      .append('path')
+      .attr('d', 'M0,0 L10,4 L0,8 Z')
+      .attr('fill', color);
+    return defs;
   }
 
   // ── Convex Hull ──
@@ -238,6 +279,7 @@ const Shared = (() => {
     COLORS, color, setupZoom, resetZoom,
     createTooltip, createSidebar, createLegend,
     highlightConnections, clearHighlight, setupSearch,
-    drawNodes, drawEdges, drawHulls
+    drawNodes, drawEdges, drawHulls,
+    curvedEdgePath, createArrowMarker
   };
 })();

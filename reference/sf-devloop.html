@@ -45,38 +45,11 @@
     const tooltip = Shared.createTooltip();
     const sidebar = Shared.createSidebar();
 
-    // Arrow marker
-    svg.append('defs').append('marker')
-      .attr('id', 'arrow')
-      .attr('viewBox', '0 0 10 10')
-      .attr('refX', 10).attr('refY', 5)
-      .attr('markerWidth', 7).attr('markerHeight', 7)
-      .attr('orient', 'auto')
-      .append('path')
-      .attr('d', 'M0,0 L10,5 L0,10 Z')
-      .attr('fill', '#94A3B8');
-
-    // Arrow marker for sub-loop
-    svg.select('defs').append('marker')
-      .attr('id', 'arrow-sub')
-      .attr('viewBox', '0 0 10 10')
-      .attr('refX', 10).attr('refY', 5)
-      .attr('markerWidth', 7).attr('markerHeight', 7)
-      .attr('orient', 'auto')
-      .append('path')
-      .attr('d', 'M0,0 L10,5 L0,10 Z')
-      .attr('fill', '#EAB308');
-
-    // Arrow marker for CI fail back-loop
-    svg.select('defs').append('marker')
-      .attr('id', 'arrow-fail')
-      .attr('viewBox', '0 0 10 10')
-      .attr('refX', 10).attr('refY', 5)
-      .attr('markerWidth', 7).attr('markerHeight', 7)
-      .attr('orient', 'auto')
-      .append('path')
-      .attr('d', 'M0,0 L10,5 L0,10 Z')
-      .attr('fill', '#F87171');
+    // Arrow markers — consistent sizing
+    const defs = svg.append('defs');
+    Shared.createArrowMarker(defs, 'arrow', '#94A3B8', { refX: 12, size: 8 });
+    Shared.createArrowMarker(defs, 'arrow-sub', '#EAB308', { refX: 12, size: 8 });
+    Shared.createArrowMarker(defs, 'arrow-fail', '#F87171', { refX: 12, size: 8 });
 
     // ── Position steps on outer ring ──
     const n = steps.length;
@@ -129,44 +102,60 @@
 
       let path;
       if (isSubLoop) {
-        const smx = cx + innerR * 0.6 * Math.cos((s.angle + t.angle) / 2);
-        const smy = cy + innerR * 0.6 * Math.sin((s.angle + t.angle) / 2);
+        // Sub-loop: curve inward toward inner ring, offset each edge slightly
+        const midAngle = (s.angle + t.angle) / 2;
+        // Prevent control point from jumping when angles wrap around
+        const angleDiff = t.angle - s.angle;
+        const adjustedMid = angleDiff > Math.PI ? midAngle + Math.PI :
+                           angleDiff < -Math.PI ? midAngle - Math.PI : midAngle;
+        const smx = cx + innerR * 0.55 * Math.cos(adjustedMid);
+        const smy = cy + innerR * 0.55 * Math.sin(adjustedMid);
         path = edgeG.append('path')
           .attr('d', `M${s.x},${s.y} Q${smx},${smy} ${t.x},${t.y}`)
           .attr('class', 'edge edge-animated')
           .attr('stroke', '#EAB308')
-          .attr('stroke-width', 2.5)
-          .attr('opacity', 0.85)
+          .attr('stroke-width', 2)
+          .attr('opacity', 0.75)
           .attr('marker-end', 'url(#arrow-sub)');
       } else if (isBackToStart) {
+        // Back-to-start: smooth curve through center area, offset from center
+        const midAngle = (s.angle + t.angle) / 2 + Math.PI;
+        const ctrlR = outerR * 0.2;
+        const ctrlX = cx + ctrlR * Math.cos(midAngle);
+        const ctrlY = cy + ctrlR * Math.sin(midAngle);
         path = edgeG.append('path')
-          .attr('d', `M${s.x},${s.y} Q${cx},${cy} ${t.x},${t.y}`)
+          .attr('d', `M${s.x},${s.y} Q${ctrlX},${ctrlY} ${t.x},${t.y}`)
           .attr('class', 'edge edge-animated')
           .attr('stroke', '#A78BFA')
-          .attr('stroke-width', 2.5)
-          .attr('opacity', 0.8)
+          .attr('stroke-width', 2)
+          .attr('opacity', 0.7)
           .attr('stroke-dasharray', '8 4')
           .attr('marker-end', 'url(#arrow)');
       } else if (isCIFail) {
-        // CI failure back-loop through inner area
-        const mx = cx + innerR * 0.4 * Math.cos((s.angle + t.angle) / 2);
-        const my = cy + innerR * 0.4 * Math.sin((s.angle + t.angle) / 2);
+        // CI failure: curve inward through inner area
+        const midAngle = (s.angle + t.angle) / 2;
+        const mx = cx + innerR * 0.35 * Math.cos(midAngle);
+        const my = cy + innerR * 0.35 * Math.sin(midAngle);
         path = edgeG.append('path')
           .attr('d', `M${s.x},${s.y} Q${mx},${my} ${t.x},${t.y}`)
           .attr('class', 'edge edge-animated')
           .attr('stroke', '#F87171')
-          .attr('stroke-width', 2.5)
-          .attr('opacity', 0.8)
+          .attr('stroke-width', 2)
+          .attr('opacity', 0.7)
           .attr('stroke-dasharray', '8 4')
           .attr('marker-end', 'url(#arrow-fail)');
       } else {
-        path = edgeG.append('line')
-          .attr('x1', s.x).attr('y1', s.y)
-          .attr('x2', t.x).attr('y2', t.y)
+        // Forward edges: curve along the outer ring arc instead of straight line
+        const midAngle = (s.angle + t.angle) / 2;
+        const arcR = outerR * 1.12; // slightly outside the ring for visual separation
+        const mx = cx + arcR * Math.cos(midAngle);
+        const my = cy + arcR * Math.sin(midAngle);
+        path = edgeG.append('path')
+          .attr('d', `M${s.x},${s.y} Q${mx},${my} ${t.x},${t.y}`)
           .attr('class', 'edge edge-animated')
           .attr('stroke', d3.color(Shared.color(t.category)).brighter(0.3))
-          .attr('stroke-width', 2.5)
-          .attr('opacity', 0.75)
+          .attr('stroke-width', 2)
+          .attr('opacity', 0.65)
           .attr('marker-end', 'url(#arrow)');
       }
 

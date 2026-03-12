@@ -191,25 +191,28 @@
           y: rowY
         }));
 
-        const lineGen = d3.line().x(d => d.x).y(d => d.y).curve(d3.curveMonotoneX);
+        const lineGen = d3.line().x(d => d.x).y(d => d.y).curve(d3.curveCatmullRom.alpha(0.5));
 
         g.append('path')
           .attr('class', 'path-line')
           .attr('d', lineGen(lineData))
           .attr('stroke', scenario.color)
-          .attr('opacity', 0.6);
+          .attr('opacity', 0.5)
+          .attr('marker-end', `url(#scenario-arrow-${scenario.id})`);
       }
 
       // Draw loop arrow for managed services
       if (scenario.id === 'managed') {
-        const cx = leftMargin + scenario.path[0] * colW;
-        const r = 20;
+        // Find the last occupied phase position
+        const lastPhaseIdx = scenario.path[scenario.path.length - 1];
+        const loopCx = leftMargin + lastPhaseIdx * colW;
+        const r = 18;
         g.append('path')
           .attr('class', 'loop-arrow')
-          .attr('d', `M${cx + r},${rowY} A${r},${r} 0 1,1 ${cx + r - 1},${rowY + 1}`)
+          .attr('d', `M${loopCx + r},${rowY - 4} A${r},${r} 0 1,0 ${loopCx + r},${rowY + 4}`)
           .attr('stroke', scenario.color)
-          .attr('opacity', 0.6)
-          .attr('marker-end', 'url(#scenario-arrow)');
+          .attr('opacity', 0.5)
+          .attr('marker-end', `url(#scenario-arrow-${scenario.id})`);
       }
 
       // Draw step nodes at active phase positions
@@ -258,16 +261,11 @@
       });
     });
 
-    // Arrow marker for loop
-    svg.append('defs').append('marker')
-      .attr('id', 'scenario-arrow')
-      .attr('viewBox', '0 0 10 8')
-      .attr('refX', 10).attr('refY', 4)
-      .attr('markerWidth', 8).attr('markerHeight', 6)
-      .attr('orient', 'auto')
-      .append('path')
-      .attr('d', 'M0,0 L10,4 L0,8 Z')
-      .attr('fill', '#34D399');
+    // Arrow markers — per-scenario colored
+    const scenarioDefs = svg.append('defs');
+    scenarios.forEach(s => {
+      Shared.createArrowMarker(scenarioDefs, `scenario-arrow-${s.id}`, s.color, { refX: 10, size: 8 });
+    });
 
     // Legend
     const legendData = scenarios.map(s => ({ key: s.id, label: s.name, color: s.color }));
