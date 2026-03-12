@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__claude_ai_Linear__get_issue",
+      "mcp__plugin_playwright_playwright__browser_navigate",
+      "mcp__plugin_playwright_playwright__browser_take_screenshot",
+      "mcp__plugin_playwright_playwright__browser_close",
+      "mcp__claude_ai_Linear__save_issue",
+      "mcp__claude_ai_Linear__save_project",
+      "mcp__claude_ai_Linear__save_milestone"
+    ]
+  }
+}
