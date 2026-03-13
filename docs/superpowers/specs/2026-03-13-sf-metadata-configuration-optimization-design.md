@@ -109,7 +109,7 @@ Inserted between Section 2 (Pre-Implementation Gate) and Section 3 (Solution Pla
 
 **Workflow:**
 
-1. **Verify API version** — Use Context7 MCP (`resolve-library-id` → `query-docs`) to confirm the latest GA Salesforce API version. Use this version for all generated metadata.
+1. **Verify API version** — Use Context7 MCP (`resolve-library-id` → `query-docs`) to confirm the latest GA Salesforce API version. Use this version for all generated metadata. If Context7 is unavailable, fall back to the `sourceApiVersion` in the project's `sfdx-project.json`.
 2. **Load relevant metadata references** — Read only the `references/metadata/{type}.md` files needed for the current solution. Do not load all files.
 3. **Check for client conventions** — Read the project's CLAUDE.md for a `## Client Metadata Conventions` section. If present, these conventions override Well-Architected defaults where they conflict.
 4. **Design each declarative component** — For every declarative component identified in the requirement, present a human-readable design spec using the Layer 2 (Declarative Design Template) from the relevant reference file. This includes:
@@ -284,8 +284,7 @@ sf-architect-solutioning (triggered by a requirement)
 2. Update `SKILL.md` — add Section 2.5, update Sections 3 and 4
 3. Update `solutioning-checklist.md` — add declarative design checkbox
 4. Update `solution-plan-template.md` — add Section 3.5
-5. Update `sf-project-init/SKILL.md` — add Round 8 client convention questions
-6. Update `sf-project-init/SKILL.md` — add CLAUDE.md output template for conventions
+5. Update `sf-project-init/SKILL.md` — add Round 8 client convention questions and CLAUDE.md output template for conventions
 
 ## 11. Risks & Mitigations
 
