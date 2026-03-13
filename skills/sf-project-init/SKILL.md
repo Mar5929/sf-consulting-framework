@@ -246,6 +246,9 @@ Present the full file list organized by category:
 **Client Deliverables (`deliverables/`):**
 - List only the deliverables the user opted into from Round 5
 
+**Archive (`archive/`):**
+- Empty directory created at scaffolding — used to store archived project artifacts
+
 **SFDX Source (`force-app/main/default/`):**
 - `classes/` — Apex classes
 - `triggers/` — Apex triggers
@@ -424,6 +427,8 @@ project-root/
 │
 ├── config/
 │   └── project-scratch-def.json
+│
+├── archive/                            # Archived project artifacts
 │
 ├── scripts/
 │   ├── deploy/
