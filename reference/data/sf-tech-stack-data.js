@@ -23,6 +23,7 @@ const SFTechStackData = (() => {
     { id: 'skill-drawio', name: 'drawio', category: 'skill', description: 'Architecture diagrams, ERDs, integration flow diagrams.' },
     { id: 'skill-frontend', name: 'Frontend Design', category: 'skill', description: 'LWC component design and UI prototyping.' },
     { id: 'skill-sf-arch', name: 'sf-architect-\nsolutioning', category: 'skill', description: 'Solution planning, declarative design, metadata XML generation.' },
+    { id: 'skill-sf-dev', name: 'sf-develop', category: 'skill', description: 'Implements approved plans: Apex, LWC, metadata XML, tests, living doc sync.' },
     { id: 'component-manifest', name: 'Component\nManifest', category: 'skill', description: 'YAML manifest + domain files for lazy-load context retrieval.' },
     { id: 'metadata-refs', name: 'Metadata\nReferences', category: 'skill', description: '8 declarative metadata templates: Flows, objects, permissions, layouts.' },
 
@@ -66,6 +67,12 @@ const SFTechStackData = (() => {
     { source: 'skill-sf-arch', target: 'metadata-refs' },
     { source: 'skill-sf-arch', target: 'component-manifest' },
     { source: 'skill-sf-arch', target: 'mcp-context7' },
+    { source: 'claude-code', target: 'skill-sf-dev' },
+    { source: 'skill-sf-arch', target: 'skill-sf-dev' },
+    { source: 'skill-sf-dev', target: 'component-manifest' },
+    { source: 'skill-sf-dev', target: 'mcp-context7' },
+    { source: 'skill-sf-dev', target: 'mcp-sfdx' },
+    { source: 'skill-sf-dev', target: 'metadata-refs' },
 
     // Hub → Plugins
     { source: 'claude-code', target: 'plug-superpowers' },

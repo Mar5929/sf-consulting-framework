@@ -60,7 +60,7 @@ const SfSprintWorkflowData = (() => {
       steps: [
         { container: 'linear',      label: 'Pick up work item' },
         { container: 'vscode',      label: 'Write Apex / LWC / config' },
-        { container: 'claude-code', label: 'AI-assisted code generation' },
+        { container: 'claude-code', label: 'sf-develop: AI-assisted code gen' },
         { container: 'salesforce',  label: 'Build in Scratch Org' },
         { container: 'github',      label: 'Branch, push, create PR' },
         { container: 'github',      label: 'CI validation' },

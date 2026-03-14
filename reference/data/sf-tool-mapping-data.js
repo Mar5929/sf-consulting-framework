@@ -20,6 +20,7 @@ const SfToolMappingData = (() => {
     { id: 'sfdx-cli', name: 'SFDX CLI', category: 'external' },
     { id: 'code-review', name: 'Code Review', category: 'plugin' },
     { id: 'sf-arch', name: 'sf-architect-solutioning', category: 'global-skill' },
+    { id: 'sf-dev', name: 'sf-develop', category: 'global-skill' },
     { id: 'manifest', name: 'Component Manifest', category: 'project-skill' },
   ];
 
@@ -38,6 +39,7 @@ const SfToolMappingData = (() => {
     'code-review':  { 'Discovery': null, 'Design': null, 'Build': 'PR code review', 'Test': null, 'Deploy': 'Final review', 'Managed Services': 'Change review' },
     'sf-arch':      { 'Discovery': null, 'Design': 'Declarative design, solution planning', 'Build': 'Pre-implementation gate, metadata XML generation', 'Test': null, 'Deploy': null, 'Managed Services': 'Change impact analysis' },
     'manifest':     { 'Discovery': null, 'Design': 'Domain scoping', 'Build': 'Lazy-load retrieval, dependency tracking', 'Test': null, 'Deploy': null, 'Managed Services': 'Impact analysis' },
+    'sf-dev':       { 'Discovery': null, 'Design': null, 'Build': 'Apex/LWC/metadata generation, TDD, doc sync', 'Test': 'Test generation, coverage enforcement', 'Deploy': null, 'Managed Services': 'Bug fix implementation' },
   };
 
   const categories = [

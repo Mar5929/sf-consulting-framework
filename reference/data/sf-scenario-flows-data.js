@@ -11,25 +11,25 @@ const SfScenarioFlowsData = (() => {
       id: 'greenfield', name: 'Greenfield', color: '#A78BFA',
       path: [0, 1, 2, 3, 4, 5],
       description: 'Full engagement — Discovery through Go-Live and Hypercare',
-      steps: ['Full Interview + Manifest Setup', 'Solution Design + Declarative Design', 'Manifest-Guided Development', 'Full Testing', 'Go-Live', 'Hypercare']
+      steps: ['Full Interview + Manifest Setup', 'Solution Design + Declarative Design', 'sf-develop: Manifest-Guided Development', 'Full Testing', 'Go-Live', 'Hypercare']
     },
     {
       id: 'build', name: 'Build Phase', color: '#60A5FA',
       path: [1, 2, 3, 4, 5],
       description: 'Requirements exist — start at Design with existing BRD',
-      steps: ['Review Design + Load Manifest', 'Manifest-Guided Development', 'Full Testing', 'Go-Live', 'Hypercare']
+      steps: ['Review Design + Load Manifest', 'sf-develop: Manifest-Guided Development', 'Full Testing', 'Go-Live', 'Hypercare']
     },
     {
       id: 'managed', name: 'Managed Services', color: '#34D399',
       path: [5],
       description: 'Ongoing support — ticket-based, continuous loop',
-      steps: ['Ticket \u2192 Manifest Load \u2192 Fix \u2192 Deploy \u2192 Repeat']
+      steps: ['Ticket \u2192 Manifest Load \u2192 sf-develop Fix \u2192 Deploy \u2192 Repeat']
     },
     {
       id: 'rescue', name: 'Rescue / Takeover', color: '#F87171',
       path: [0, 1, 2, 3, 4],
       description: 'Audit existing org \u2192 Remediation plan \u2192 Resume normal path',
-      steps: ['Audit & Build Manifest', 'Remediation + Declarative Design', 'Critical Fixes', 'Regression Test', 'Stabilize Deploy']
+      steps: ['Audit & Build Manifest', 'Remediation + Declarative Design', 'sf-develop: Critical Fixes', 'Regression Test', 'Stabilize Deploy']
     },
   ];
 

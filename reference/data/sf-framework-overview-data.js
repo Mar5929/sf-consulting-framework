@@ -23,7 +23,7 @@ const SFFrameworkOverviewData = (() => {
     // Tools lane
     { id: 'tool-init', name: 'sf-project-init', phase: 'tools', category: 'global-skill', description: 'Structured interview, scaffolding, Linear setup', x: 0 },
     { id: 'tool-design', name: 'Context7 +\nArchitect Skill', phase: 'tools', category: 'mcp', description: 'Live docs + declarative design + Well-Architected guidance', x: 1 },
-    { id: 'tool-build', name: 'SFDX CLI +\nSF DX MCP', phase: 'tools', category: 'mcp', description: 'Source push/pull, scratch orgs, manifest retrieval, deployments', x: 2 },
+    { id: 'tool-build', name: 'sf-develop +\nSFDX CLI', phase: 'tools', category: 'mcp', description: 'sf-develop skill orchestrates Apex/LWC/metadata builds; SFDX CLI for source ops', x: 2 },
     { id: 'tool-test', name: 'Playwright +\nApex Tests', phase: 'tools', category: 'plugin', description: 'UI testing, unit testing, code coverage', x: 3 },
     { id: 'tool-deploy', name: 'GitHub Actions\nCI/CD', phase: 'tools', category: 'external', description: 'Automated validation, deployment pipelines', x: 4 },
     { id: 'tool-support', name: 'Linear +\nTicket Process', phase: 'tools', category: 'mcp', description: 'Issue tracking, SLA monitoring', x: 5 },
