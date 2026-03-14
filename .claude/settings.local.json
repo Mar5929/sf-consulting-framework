@@ -7,7 +7,9 @@
       "mcp__plugin_playwright_playwright__browser_close",
       "mcp__claude_ai_Linear__save_issue",
       "mcp__claude_ai_Linear__save_project",
-      "mcp__claude_ai_Linear__save_milestone"
+      "mcp__claude_ai_Linear__save_milestone",
+      "mcp__claude_ai_Linear__list_projects",
+      "mcp__claude_ai_Linear__list_issues"
     ]
   }
 }

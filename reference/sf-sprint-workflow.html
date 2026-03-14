@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sprint Workflow — Salesforce Framework</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .container-card { cursor: pointer; transition: filter .2s, opacity .3s; }
+    .container-card:hover { filter: brightness(1.12); }
+    .container-card.dimmed { opacity: 0.25; }
+    .container-header { rx: 12; ry: 12; }
+    .container-title {
+      font-family: var(--font-ui);
+      font-size: 14px;
+      font-weight: 700;
+      fill: var(--text);
+      text-anchor: middle;
+      pointer-events: none;
+    }
+    .container-desc {
+      font-family: var(--font-ui);
+      font-size: 10px;
+      fill: var(--text-dim);
+      text-anchor: middle;
+      pointer-events: none;
+    }
+    .flow-edge {
+      fill: none;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      transition: opacity .3s, stroke-width .2s;
+    }
+    .flow-edge.dimmed { opacity: 0.06; stroke-width: 1.5; }
+    .flow-edge.active {
+      stroke-width: 3;
+      stroke-dasharray: 6 4;
+      animation: pulse-flow .8s linear infinite;
+    }
+    .step-node { cursor: pointer; transition: opacity .3s; }
+    .step-node.dimmed { opacity: 0.12; }
+    .step-num {
+      font-size: 10px;
+      font-weight: 700;
+      fill: #fff;
+      text-anchor: middle;
+      pointer-events: none;
+    }
+    .step-label {
+      font-family: var(--font-ui);
+      font-size: 9px;
+      fill: var(--text);
+      text-anchor: middle;
+      pointer-events: none;
+    }
+    .sidebar .sb-flow-list {
+      list-style: none;
+      padding: 0;
+    }
+    .sidebar .sb-flow-list li {
+      font-size: 13px;
+      padding: 8px 0;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .sidebar .sb-flow-list .step-badge {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; color: #fff;
+      flex-shrink: 0;
+    }
+    .sidebar .sb-flow-list .step-container-tag {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      display: block;
+      margin-top: 2px;
+    }
+    .sidebar .sb-persona-list {
+      list-style: none;
+      padding: 0;
+    }
+    .sidebar .sb-persona-list li {
+      font-size: 13px;
+      padding: 6px 0;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sidebar .sb-persona-list .persona-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <button id="btn-reset">Reset Zoom</button>
+  </div>
+
+  <div class="filter-bar" id="filter-bar"></div>
+
+  <div class="title-bar">
+    <h1>Sprint Workflow</h1>
+    <div class="subtitle">Persona Paths Through Applications During a Sprint</div>
+  </div>
+
+  <a class="back-link" href="index.html">&larr; All Diagrams</a>
+
+  <svg class="diagram" id="svg"></svg>
+
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="shared.js"></script>
+  <script src="data/sf-sprint-workflow-data.js"></script>
+  <script>
+  (() => {
+    const { personas, containers, flows } = SfSprintWorkflowData;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    const svg = d3.select('#svg');
+    const g = svg.append('g');
+
+    // Zoom
+    const zoom = Shared.setupZoom(svg, g);
+    const initScale = Math.min(width / 1300, height / 850, 0.85);
+    const initTx = (width - 1200 * initScale) / 2;
+    const initTy = (height - 720 * initScale) / 2 + 20;
+    svg.call(zoom.transform, d3.zoomIdentity.translate(initTx, initTy).scale(initScale));
+    document.getElementById('btn-reset').onclick = () => {
+      svg.transition().duration(500)
+        .call(zoom.transform, d3.zoomIdentity.translate(initTx, initTy).scale(initScale));
+    };
+
+    // Tooltip
+    const tooltip = Shared.createTooltip();
+
+    // Sidebar
+    const sidebarEl = document.createElement('div');
+    sidebarEl.className = 'sidebar';
+    sidebarEl.innerHTML = `
+      <button class="sidebar-close">&times;</button>
+      <h2 class="sb-name"></h2>
+      <div class="sb-category"></div>
+      <div class="sb-desc"></div>
+      <div class="sb-detail"></div>
+    `;
+    document.body.appendChild(sidebarEl);
+    sidebarEl.querySelector('.sidebar-close').onclick = () => sidebarEl.classList.remove('open');
+
+    // ── Layout constants ──
+    const containerW = 320;
+    const containerH = 220;
+    const gapX = 80;
+    const gapY = 100;
+    const startX = 60;
+    const startY = 80;
+    const headerH = 10;
+
+    // ── Container positions ──
+    const containerMap = {};
+    containers.forEach(c => {
+      c.px = startX + c.gridCol * (containerW + gapX);
+      c.py = startY + c.gridRow * (containerH + gapY);
+      c.cx = c.px + containerW / 2;
+      c.cy = c.py + containerH / 2;
+      containerMap[c.id] = c;
+    });
+
+    // ── Compute step node positions ──
+    // Group steps by container, then assign positions within each container
+    const stepNodes = [];
+    const containerSlots = {};
+
+    // First pass: count how many step nodes land in each container
+    containers.forEach(c => { containerSlots[c.id] = []; });
+    flows.forEach((flow, fi) => {
+      const persona = personas.find(p => p.id === flow.personaId);
+      flow.steps.forEach((step, si) => {
+        const node = {
+          id: `${flow.personaId}-${si}`,
+          personaId: flow.personaId,
+          personaIndex: fi,
+          container: step.container,
+          label: step.label,
+          stepNum: si + 1,
+          color: persona.color,
+          personaName: persona.name,
+        };
+        stepNodes.push(node);
+        containerSlots[step.container].push(node);
+      });
+    });
+
+    // Second pass: position nodes within containers
+    // Group by persona within each container, then spread horizontally
+    containers.forEach(c => {
+      const slots = containerSlots[c.id];
+      if (!slots.length) return;
+
+      // Group by persona
+      const byPersona = {};
+      slots.forEach(s => {
+        if (!byPersona[s.personaId]) byPersona[s.personaId] = [];
+        byPersona[s.personaId].push(s);
+      });
+
+      const personaIds = Object.keys(byPersona);
+      const totalSlots = slots.length;
+      const usableW = containerW - 60;
+      const usableH = containerH - 70;
+
+      // Distribute all nodes in a grid-like layout within the container
+      let idx = 0;
+      personaIds.forEach((pid, pi) => {
+        const pNodes = byPersona[pid];
+        pNodes.forEach((node, ni) => {
+          // Horizontal spread across all nodes in this container
+          const xSlot = idx;
+          const totalInRow = Math.min(totalSlots, 5);
+          const xSpacing = usableW / (totalInRow + 1);
+          const row = Math.floor(idx / 5);
+          const col = idx % 5;
+
+          node.nx = c.px + 30 + xSpacing * (col + 1);
+          node.ny = c.py + 55 + row * 50 + (pi % 2) * 8; // slight vertical offset per persona
+          idx++;
+        });
+      });
+    });
+
+    // ── Draw containers ──
+    const containerG = g.selectAll('.container-card')
+      .data(containers)
+      .join('g')
+      .attr('class', 'container-card')
+      .attr('data-id', d => d.id);
+
+    // Card background
+    containerG.append('rect')
+      .attr('x', d => d.px)
+      .attr('y', d => d.py)
+      .attr('width', containerW)
+      .attr('height', containerH)
+      .attr('rx', 12)
+      .attr('fill', '#1E293B')
+      .attr('stroke', d => d.color)
+      .attr('stroke-width', 1.5)
+      .attr('stroke-opacity', 0.6);
+
+    // Colored header strip
+    containerG.append('rect')
+      .attr('x', d => d.px)
+      .attr('y', d => d.py)
+      .attr('width', containerW)
+      .attr('height', headerH)
+      .attr('rx', 12)
+      .attr('fill', d => d.color)
+      .attr('opacity', 0.7);
+
+    // Clip the bottom corners of header strip
+    containerG.append('rect')
+      .attr('x', d => d.px)
+      .attr('y', d => d.py + headerH - 4)
+      .attr('width', containerW)
+      .attr('height', 4)
+      .attr('fill', d => d.color)
+      .attr('opacity', 0.7);
+
+    // Title
+    containerG.append('text')
+      .attr('class', 'container-title')
+      .attr('x', d => d.cx)
+      .attr('y', d => d.py + 30)
+      .text(d => d.name);
+
+    // Description
+    containerG.append('text')
+      .attr('class', 'container-desc')
+      .attr('x', d => d.cx)
+      .attr('y', d => d.py + 44)
+      .text(d => d.description);
+
+    // Container click → sidebar
+    containerG.on('click', (event, d) => {
+      event.stopPropagation();
+      const usedBy = flows.filter(f => f.steps.some(s => s.container === d.id));
+      const personaList = usedBy.map(f => {
+        const p = personas.find(pp => pp.id === f.personaId);
+        const steps = f.steps.filter(s => s.container === d.id).map(s => s.label);
+        return { name: p.name, color: p.color, steps };
+      });
+
+      sidebarEl.querySelector('.sb-name').textContent = d.name;
+      sidebarEl.querySelector('.sb-category').textContent = '';
+      sidebarEl.querySelector('.sb-desc').textContent = d.description;
+      const detail = sidebarEl.querySelector('.sb-detail');
+      detail.innerHTML = '<h3>Used By</h3><ul class="sb-persona-list"></ul>';
+      const ul = detail.querySelector('.sb-persona-list');
+      personaList.forEach(p => {
+        p.steps.forEach(step => {
+          const li = document.createElement('li');
+          li.innerHTML = `<span class="persona-dot" style="background:${p.color}"></span>
+            <div><strong>${p.name}</strong><span class="step-container-tag">${step}</span></div>`;
+          ul.appendChild(li);
+        });
+      });
+      sidebarEl.classList.add('open');
+    });
+
+    // ── Arrow markers per persona ──
+    const defs = svg.append('defs');
+    personas.forEach(p => {
+      Shared.createArrowMarker(defs, `arrow-${p.id}`, p.color, { refX: 10, size: 8 });
+    });
+
+    // ── Draw flow edges ──
+    const edgeG = g.append('g').attr('class', 'edges');
+    const allEdges = [];
+
+    flows.forEach((flow, fi) => {
+      const persona = personas.find(p => p.id === flow.personaId);
+      const flowNodes = stepNodes.filter(n => n.personaId === flow.personaId);
+
+      for (let i = 0; i < flowNodes.length - 1; i++) {
+        const src = flowNodes[i];
+        const tgt = flowNodes[i + 1];
+        const sameContainer = src.container === tgt.container;
+        const isReturn = tgt.container === 'linear' && i === flowNodes.length - 2;
+
+        let pathD;
+        if (sameContainer) {
+          // Short curved path within container
+          const midX = (src.nx + tgt.nx) / 2;
+          const midY = Math.min(src.ny, tgt.ny) - 20;
+          pathD = `M${src.nx},${src.ny} Q${midX},${midY} ${tgt.nx},${tgt.ny}`;
+        } else if (isReturn) {
+          // Return path — arc outside the grid
+          const srcC = containerMap[src.container];
+          const tgtC = containerMap[tgt.container];
+
+          if (srcC.gridRow === 0 && tgtC.gridRow === 0) {
+            // Same row — arc above
+            const arcY = Math.min(src.ny, tgt.ny) - 120 - fi * 15;
+            pathD = `M${src.nx},${src.ny} C${src.nx},${arcY} ${tgt.nx},${arcY} ${tgt.nx},${tgt.ny}`;
+          } else {
+            // Different rows — arc below or to the left
+            const arcX = startX - 40 - fi * 20;
+            const midY = (src.ny + tgt.ny) / 2;
+            pathD = `M${src.nx},${src.ny} C${arcX},${src.ny} ${arcX},${tgt.ny} ${tgt.nx},${tgt.ny}`;
+          }
+        } else {
+          // Normal cross-container edge
+          const offset = (fi - 1.5) * 12; // spread parallel edges
+          pathD = Shared.curvedEdgePath(src.nx, src.ny, tgt.nx, tgt.ny, offset);
+        }
+
+        const edge = {
+          personaId: flow.personaId,
+          source: src,
+          target: tgt,
+          pathD,
+          color: persona.color,
+          isReturn,
+          markerId: `arrow-${persona.id}`,
+        };
+        allEdges.push(edge);
+      }
+    });
+
+    const edgePaths = edgeG.selectAll('.flow-edge')
+      .data(allEdges)
+      .join('path')
+      .attr('class', d => `flow-edge flow-${d.personaId}`)
+      .attr('d', d => d.pathD)
+      .attr('stroke', d => d.color)
+      .attr('opacity', 0.4)
+      .attr('marker-end', d => `url(#${d.markerId})`)
+      .classed('active', false);
+
+    // ── Draw step nodes ──
+    const nodeG = g.append('g').attr('class', 'step-nodes');
+
+    const nodeEls = nodeG.selectAll('.step-node')
+      .data(stepNodes)
+      .join('g')
+      .attr('class', d => `step-node node-${d.personaId}`)
+      .attr('transform', d => `translate(${d.nx}, ${d.ny})`);
+
+    nodeEls.append('circle')
+      .attr('r', 12)
+      .attr('fill', d => d.color)
+      .attr('stroke', d => d3.color(d.color).brighter(0.5))
+      .attr('stroke-width', 1.5)
+      .attr('opacity', 0.9);
+
+    nodeEls.append('text')
+      .attr('class', 'step-num')
+      .attr('dy', 4)
+      .text(d => d.stepNum);
+
+    nodeEls.append('text')
+      .attr('class', 'step-label')
+      .attr('y', 22)
+      .text(d => d.label.length > 22 ? d.label.slice(0, 22) + '...' : d.label);
+
+    // Step node hover
+    nodeEls
+      .on('mouseover', (event, d) => {
+        const containerName = containerMap[d.container].name;
+        tooltip.show({
+          name: `Step ${d.stepNum}: ${d.label}`,
+          category: d.personaName,
+          description: `Application: ${containerName}`
+        }, event);
+      })
+      .on('mousemove', (event, d) => {
+        const containerName = containerMap[d.container].name;
+        tooltip.show({
+          name: `Step ${d.stepNum}: ${d.label}`,
+          category: d.personaName,
+          description: `Application: ${containerName}`
+        }, event);
+      })
+      .on('mouseout', () => tooltip.hide())
+      .on('click', (event, d) => {
+        event.stopPropagation();
+        const flow = flows.find(f => f.personaId === d.personaId);
+        const persona = personas.find(p => p.id === d.personaId);
+
+        sidebarEl.querySelector('.sb-name').textContent = persona.name;
+        sidebarEl.querySelector('.sb-category').textContent = 'Sprint Workflow';
+        sidebarEl.querySelector('.sb-desc').textContent = `${flow.steps.length}-step flow through the application landscape`;
+
+        const detail = sidebarEl.querySelector('.sb-detail');
+        detail.innerHTML = '<h3>Flow Steps</h3><ul class="sb-flow-list"></ul>';
+        const ul = detail.querySelector('.sb-flow-list');
+        flow.steps.forEach((step, i) => {
+          const li = document.createElement('li');
+          const containerName = containerMap[step.container].name;
+          li.innerHTML = `<span class="step-badge" style="background:${persona.color}">${i + 1}</span>
+            <div>${step.label}<span class="step-container-tag">${containerName}</span></div>`;
+          if (i === d.stepNum - 1) li.style.background = 'rgba(255,255,255,0.05)';
+          ul.appendChild(li);
+        });
+        sidebarEl.classList.add('open');
+      });
+
+    // ── Filter bar ──
+    const filterBar = document.getElementById('filter-bar');
+
+    // "All" button
+    const allBtn = document.createElement('button');
+    allBtn.className = 'filter-btn active';
+    allBtn.textContent = 'All';
+    allBtn.style.borderColor = 'var(--accent)';
+    filterBar.appendChild(allBtn);
+
+    // Persona buttons
+    personas.forEach(p => {
+      const btn = document.createElement('button');
+      btn.className = 'filter-btn';
+      btn.textContent = p.name;
+      btn.dataset.persona = p.id;
+      btn.style.setProperty('--persona-color', p.color);
+      filterBar.appendChild(btn);
+    });
+
+    let activePersona = null;
+
+    function applyFilter(personaId) {
+      activePersona = personaId;
+
+      // Update button states
+      filterBar.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (personaId === null && btn.textContent === 'All') {
+          btn.classList.add('active');
+          btn.style.background = '';
+          btn.style.borderColor = 'var(--accent)';
+          btn.style.color = '';
+        } else if (btn.dataset.persona === personaId) {
+          btn.classList.add('active');
+          const p = personas.find(pp => pp.id === personaId);
+          btn.style.background = p.color;
+          btn.style.borderColor = p.color;
+          btn.style.color = '#fff';
+        } else {
+          btn.style.background = '';
+          btn.style.borderColor = '';
+          btn.style.color = '';
+        }
+      });
+
+      if (personaId === null) {
+        // Show all
+        edgePaths.attr('opacity', 0.4).classed('active', false).classed('dimmed', false);
+        nodeEls.classed('dimmed', false).style('opacity', null);
+        containerG.classed('dimmed', false);
+      } else {
+        // Highlight selected persona
+        const activeContainers = new Set();
+        flows.find(f => f.personaId === personaId).steps.forEach(s => activeContainers.add(s.container));
+
+        edgePaths
+          .classed('active', d => d.personaId === personaId)
+          .classed('dimmed', d => d.personaId !== personaId)
+          .attr('opacity', d => d.personaId === personaId ? 0.9 : 0.06);
+
+        nodeEls
+          .classed('dimmed', d => d.personaId !== personaId)
+          .style('opacity', d => d.personaId === personaId ? 1 : 0.1);
+
+        containerG.classed('dimmed', d => !activeContainers.has(d.id));
+      }
+    }
+
+    // Wire up filter clicks
+    allBtn.onclick = () => applyFilter(null);
+    filterBar.querySelectorAll('.filter-btn[data-persona]').forEach(btn => {
+      btn.onclick = () => applyFilter(btn.dataset.persona);
+    });
+
+    // ── Legend ──
+    const legendEl = document.createElement('div');
+    legendEl.className = 'legend';
+    personas.forEach(p => {
+      const item = document.createElement('div');
+      item.className = 'legend-item';
+      item.innerHTML = `<span class="legend-swatch" style="background:${p.color}"></span>${p.name}`;
+      item.style.cursor = 'pointer';
+      item.onclick = () => applyFilter(p.id);
+      legendEl.appendChild(item);
+    });
+    document.body.appendChild(legendEl);
+
+    // ── Background click — clear ──
+    svg.on('click', (e) => {
+      if (e.target === svg.node()) {
+        sidebarEl.classList.remove('open');
+      }
+    });
+  })();
+  </script>
+</body>
+</html>

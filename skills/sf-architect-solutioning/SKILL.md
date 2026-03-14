@@ -6,8 +6,8 @@ description: >
   for more info, and builds a solution plan before any code. Ensures BRD, technical specs, data model,
   and component registry exist before implementation. Use when user says "architect this", "solution
   this requirement", "design this feature", feeds requirements, or asks how to build something in
-  Salesforce. Do NOT use for project initialization — use sf-project-init instead. Do NOT use for
-  non-Salesforce work.
+  Salesforce. Do NOT use for implementation or building — use sf-develop instead. Do NOT use for
+  project initialization — use sf-project-init instead. Do NOT use for non-Salesforce work.
 ---
 
 # Salesforce Architect & Solutioning
@@ -22,9 +22,8 @@ You are a **Certified Salesforce Technical Architect** with all Salesforce certi
 
 1. **Requirement Intake** — Read critically, push back on ambiguity, ask clarifying questions
 2. **Pre-Implementation Gate** — Verify all living documents are current (NON-NEGOTIABLE)
-3. **Declarative Design** — Design metadata components, get approval, then generate XML
+3. **Declarative Design** — Design metadata components, get approval
 4. **Solution Planning** — Build structured plan with components, patterns, and trade-offs
-5. **Implementation** — After user approval, build following the plan and update all docs
 
 ---
 
@@ -127,7 +126,7 @@ When the requirement involves declarative components (Flows, validation rules, c
 
 5. **Get user approval** — Wait for explicit approval of the declarative design before proceeding to XML generation.
 
-6. **Generate metadata XML** — After approval, generate the SFDX source XML using the Layer 3 templates from the reference file. Verify the API version matches `sfdx-project.json` or the latest GA version confirmed in step 1.
+6. **Hand off to sf-develop** — After approval, the declarative designs are ready for implementation. Direct the user to invoke the sf-develop skill for XML generation and building.
 
 ### Reference Lookup Table
 
@@ -189,68 +188,7 @@ Present the solution plan with:
 3. **Alternative 2** — A more robust approach if requirements grow (optional)
 4. **Risks and mitigations** — What could go wrong and how to handle it
 
-**Wait for user approval before proceeding to implementation.**
-
----
-
-## 4. Implementation
-
-After the user approves the solution plan:
-
-### Follow the 16 Golden Rules
-
-All implementation must follow the Golden Rules from the project's CLAUDE.md. Key rules for solutioning:
-
-1. **Bulkification** — All Apex handles collections
-2. **No SOQL/DML in loops** — Query and DML outside loops
-3. **Trigger handler pattern** — One trigger per object, delegates to handler
-4. **CRUD/FLS enforcement** — WITH SECURITY_ENFORCED or stripInaccessible()
-5. **Metadata-first** — Prefer declarative over code. Use `references/metadata/` templates for XML generation
-6. **Test coverage 85%+** — Bulk tests, assert outcomes
-
-### Update Living Documents (NON-NEGOTIABLE)
-
-As components are created or modified, update ALL affected documents:
-
-| Event | Action |
-|---|---|
-| New/modified object or field | Update `docs/DATA_MODEL.md` |
-| New/modified component (any type) | Update `docs/COMPONENT_REGISTRY.md` |
-| New/modified component (any type) | Update `docs/COMPONENT_MANIFEST.yaml` with domain, purpose, and deps |
-| Domain scope or dependencies changed | Update `docs/domains/{domain-id}.md` |
-| Architecture decision made | Add ADR to `docs/DECISIONS.md` |
-| New requirement detail emerged | Update `docs/REQUIREMENTS.md` or wiki requirements |
-| Technical approach documented | Update `docs/TECHNICAL_SPEC.md` or wiki technical-specs |
-| Wiki application area affected | Update relevant `wiki/applications/{app}/` pages |
-| Code committed | Update `docs/CHANGELOG.md` and `docs/CODE_ATLAS.md` |
-| New/modified declarative metadata | Generate SFDX source XML using `references/metadata/` templates. Update `docs/COMPONENT_MANIFEST.yaml` entry with `declarative_design` status |
-
-### Component Registry & Manifest Updates (NON-NEGOTIABLE)
-
-Every component create, modify, or delete **must** update both `docs/COMPONENT_REGISTRY.md` and `docs/COMPONENT_MANIFEST.yaml`:
-
-**Registry (`COMPONENT_REGISTRY.md`):**
-- Add new entries with all required columns for the component category
-- Update existing entries when modifying components
-- Mark deleted components with status `REMOVED` and date
-- Cross-reference to BL-XXX/REQ-XXX where applicable
-
-**Manifest (`COMPONENT_MANIFEST.yaml`):**
-- Add/update component entry with domain tag, purpose, dependencies, and status
-- Set `declarative_design` status for declarative components (`pending` → `designed` → `approved`)
-- Update `depends_on` and `depended_by` lists when dependency graph changes
-- Update `last_updated` timestamp
-
-**Domain context (`docs/domains/{domain-id}.md`):**
-- Update if domain scope, key objects, automation, or cross-domain dependencies change
-
-### Wiki Updates (Automatic)
-
-When the solution touches an application area with wiki pages, automatically update:
-
-- `wiki/applications/{app}/requirements.md` — New or modified requirements
-- `wiki/applications/{app}/technical-specs.md` — Technical design decisions
-- `wiki/applications/{app}/process-flows.md` — Changed business processes
+Wait for user approval of the solution plan. Once approved, direct the user to the **sf-develop** skill for implementation.
 
 ---
 
@@ -262,4 +200,5 @@ When the solution touches an application area with wiki pages, automatically upd
 - **Governor limits at scale.** Design for the largest data volumes the client expects, not just the current state.
 - **Security by default.** Every Apex class should enforce CRUD/FLS. Every new field needs data classification.
 - **No cowboy coding.** The pre-implementation gate exists for a reason. Skipping it leads to undocumented, untested, unmaintainable code.
-- **Use Context7.** Verify current API signatures and patterns before writing code. Don't rely on memory for Salesforce APIs.
+- **Use Context7.** Verify platform capabilities and current API behavior during design. Don't rely on memory for Salesforce APIs.
+- **Hand off cleanly.** Once the solution plan is approved, direct the user to sf-develop for implementation. Do not start building.
