@@ -140,7 +140,7 @@ Read `references/document-templates.md` for template structures.
   - If yes: confirm the team (default: Rihm), milestone structure based on entry point
 - Which **living documents** should Claude maintain?
   - Recommend defaults: BACKLOG.md, REQUIREMENTS.md, TECHNICAL_SPEC.md, DECISIONS.md, CHANGELOG.md, DATA_MODEL.md, CODE_ATLAS.md, **COMPONENT_REGISTRY.md** (NON-OPTIONAL — always included)
-- **Component Registry** — `docs/COMPONENT_REGISTRY.md` is always generated. Explain: "This is a comprehensive inventory of every component in your org — objects, fields, classes, triggers, flows, LWC, permission sets, and more. It's updated automatically whenever components are created, modified, or deleted. This is non-optional."
+- **Component Registry & Manifest** — `docs/COMPONENT_REGISTRY.md` and `docs/COMPONENT_MANIFEST.yaml` are always generated. Explain: "The registry is a human-readable inventory of every component. The manifest is a machine-readable YAML index with domain tags that lets Claude quickly find relevant components without reading everything. Both are updated automatically whenever components are created, modified, or deleted. These are non-optional."
 - **Daily Linear Sync** (opt-in) — Would you like a daily GitHub Actions workflow that syncs your Linear project state to BACKLOG.md? This keeps the backlog file current with Linear as the source of truth.
   - If yes: will generate `.github/workflows/linear-sync.yml` and `scripts/linear-sync.js`. Requires `LINEAR_API_KEY`, `LINEAR_TEAM_ID`, and `LINEAR_PROJECT_ID` as GitHub Secrets.
 
@@ -186,6 +186,14 @@ Read `references/naming-conventions.md` for the default naming standard.
 - **Client design standards** — Does the client have specific design standards beyond Salesforce best practices? (Coding guidelines, UI standards, architectural constraints, documentation formats, approval processes)
   - If yes: capture these for `wiki/ways-of-working/design-standards.md` Layer 2 (client-specific)
   - If no: framework defaults (16 Golden Rules + Well-Architected patterns) will apply
+- **Client metadata conventions** — Does the client have specific conventions for declarative metadata that differ from Salesforce Well-Architected defaults?
+  - Flow conventions (fault handling, naming, description templates, subflow patterns)
+  - Object/Field conventions (field prefixes, required fields on all custom objects, relationship naming)
+  - Permission model (by feature vs. by role, required Permission Set Groups, profile lockdown)
+  - Approval conventions (routing approach, notification templates)
+  - Error handling (logging object, fault path patterns, notification channels)
+  - If yes: capture for `## Client Metadata Conventions` section in CLAUDE.md
+  - If no: Well-Architected defaults from `references/metadata/` apply exclusively
 - Any **additional golden rules** or invariants specific to this engagement?
 
 ---
@@ -208,7 +216,7 @@ These are included in every generated CLAUDE.md. Present them during Round 6 for
 12. **CPU time budget** — Monitor in complex operations, use Queueable/Batch for heavy processing
 13. **Naming conventions** — Follow firm standard from `references/naming-conventions.md`
 14. **Living Document Sync** — All living documents (REQUIREMENTS, BACKLOG, TECHNICAL_SPEC, wiki pages, COMPONENT_REGISTRY) must be kept in sync. Update all affected docs when modifying code. Never leave a document stale.
-15. **Component Registry Updates (Non-Negotiable)** — Every component create/modify/delete must update `docs/COMPONENT_REGISTRY.md` immediately.
+15. **Component Registry & Manifest Updates (Non-Negotiable)** — Every component create/modify/delete must update both `docs/COMPONENT_REGISTRY.md` and `docs/COMPONENT_MANIFEST.yaml` immediately. Update the relevant `docs/domains/{domain-id}.md` if domain scope or dependencies change.
 16. **UI Testing with Playwright** — Before starting UI work (LWC, FlexCard, Experience Cloud page), ask user: "This involves UI work. Should I use the Playwright screenshot loop?" If yes, follow build → screenshot → review → iterate loop.
 
 ---
@@ -237,6 +245,8 @@ Present the full file list organized by category:
 **Living Documentation (`docs/`):**
 - List only the documents the user opted into from Round 5
 - Always include `COMPONENT_REGISTRY.md` (NON-OPTIONAL)
+- Always include `COMPONENT_MANIFEST.yaml` (NON-OPTIONAL)
+- Always include `docs/domains/` directory with stub domain context files per identified business area
 
 **Project Wiki (`wiki/`):**
 - `organization-overview.md`
@@ -294,21 +304,43 @@ After approval, generate the project. Read reference files for templates:
 
 ### CLAUDE.md Generation
 
-Generate with the **13-section structure** from `references/document-templates.md`, tailored for Salesforce:
+Generate with the **14-section structure** from `references/document-templates.md`, tailored for Salesforce:
 
 **Section 1 — Project Overview:** Client name, project name, entry point, products in scope, team, org type
-**Section 2 — Golden Rules:** The 16 Golden Rules (confirmed or modified in Rounds 6/8), plus any engagement-specific rules. Rules 14-16: Living Document Sync, Component Registry Updates (Non-Negotiable), UI Testing with Playwright
+**Section 2 — Golden Rules:** The 16 Golden Rules (confirmed or modified in Rounds 6/8), plus any engagement-specific rules. Rules 14-16: Living Document Sync, Component Registry & Manifest Updates (Non-Negotiable), UI Testing with Playwright
 **Section 3 — Workspace Structure:** SFDX directory tree with `force-app/`, `docs/`, `deliverables/`, `scripts/`, `.github/`
-**Section 4 — Living Documents Update Protocol:** Event-to-action table for enabled documents
+**Section 4 — Living Documents Update Protocol:** Event-to-action table for enabled documents (includes manifest and domain file update events)
 **Section 5 — Coding Standards:** Salesforce-specific: Apex (bulkification, trigger handlers, SOQL best practices), LWC (wire vs imperative, SLDS, accessibility), Flows (naming, documentation)
 **Section 6 — Tech Stack:** Salesforce Platform, SFDX CLI, VS Code, GitHub, GitHub Actions, selected products
 **Section 7 — Key Commands:** SFDX commands grouped by: Org Management, Source Operations, Testing, Deployment
-**Section 8 — Session Startup:** Read CLAUDE.md → CODE_ATLAS.md → BACKLOG.md → ask what to work on
+**Section 8 — Session Startup:** Read CLAUDE.md → CODE_ATLAS.md → BACKLOG.md → ask what to work on. Includes Component Manifest Retrieval Protocol for lazy-loading domain context when working on specific items
 **Section 9 — Git Commit Protocol:** GitFlow format, `feat(BL-XXX): summary`
 **Section 10 — Clarification Protocol:** Always clarify: object model changes, sharing rules, security settings, integrations
 **Section 11 — Context Window Management:** Use docs as external memory, reference by path
 **Section 12 — Bug-Prevention Facts:** Empty, populated during development
 **Section 13 — References:** Link to Well-Architected, Context7, SFDX docs, product-specific guides
+
+**Client Metadata Conventions (optional — only if client provided conventions in Round 8):**
+```
+## Client Metadata Conventions
+
+These conventions layer on top of Salesforce Well-Architected defaults.
+When a client convention conflicts with a default, the client convention wins.
+
+### Flows
+- [Client-specific flow conventions]
+
+### Objects & Fields
+- [Client-specific naming/structure conventions]
+
+### Permission Model
+- [Client-specific permission approach]
+
+### Error Handling
+- [Client-specific error patterns]
+```
+
+If the user has no client-specific conventions, omit this section entirely — Well-Architected defaults from `references/metadata/` apply exclusively.
 
 **Context7 Integration:** Add to Section 13:
 ```
@@ -381,7 +413,10 @@ project-root/
 │   ├── CHANGELOG.md
 │   ├── DATA_MODEL.md
 │   ├── CODE_ATLAS.md
-│   └── COMPONENT_REGISTRY.md          # NON-OPTIONAL — comprehensive component inventory
+│   ├── COMPONENT_REGISTRY.md          # NON-OPTIONAL — human-readable component inventory
+│   ├── COMPONENT_MANIFEST.yaml        # NON-OPTIONAL — machine-readable domain-tagged index
+│   └── domains/                       # Per-domain context files for lazy-loading retrieval
+│       └── {domain-id}.md             # One per business domain (50-100 lines each)
 │
 ├── wiki/                              # Project wiki
 │   ├── organization-overview.md
@@ -464,6 +499,24 @@ Generate `docs/COMPONENT_REGISTRY.md` with:
 - Summary table with all categories at count 0
 - All category section headers with empty tables
 - This is **NON-OPTIONAL** — always generated regardless of user selections
+
+### Component Manifest Generation
+
+Generate `docs/COMPONENT_MANIFEST.yaml` with:
+- Schema version and last_updated date
+- `domains:` section pre-populated from Round 3 product selections and Round 4 business process answers. Map products and processes to domains using kebab-case IDs (e.g., `lead-management`, `opportunity-management`, `case-management`)
+- Empty `components:` list — populated during development
+- Read `references/document-templates.md` for the full YAML schema
+- This is **NON-OPTIONAL** — always generated regardless of user selections
+
+### Domain Context Files Generation
+
+Generate `docs/domains/{domain-id}.md` stub files:
+- One file per domain identified in the manifest's `domains:` section
+- Use the template from `references/document-templates.md`
+- Populate Business Purpose from interview answers (Round 3 product context, Round 4 business processes)
+- Leave Key Objects, Key Automation, Key UI sections as placeholders — populated during development
+- If client metadata conventions (captured in Round 8 `## Client Metadata Conventions`) apply to specific domains, note which domains have client-specific conventions that override Well-Architected defaults
 
 ### Linear Sync Generation
 

@@ -29,10 +29,31 @@ Use this template when presenting a solution plan to the user after the pre-impl
 
 ### 3. Components
 
-| # | Type | Name | Purpose | Pattern | New/Modify |
-|---|---|---|---|---|---|
-| 1 | [Apex Class / Flow / LWC / etc.] | [API Name] | [What it does] | [Pattern used] | [New / Modify] |
-| 2 | | | | | |
+| # | Type | Name | Purpose | Pattern | New/Modify | Declarative Design Status |
+|---|---|---|---|---|---|---|
+| 1 | [Apex Class / Flow / LWC / etc.] | [API Name] | [What it does] | [Pattern used] | [New / Modify] | [Designed / N/A] |
+| 2 | | | | | | |
+
+### 3.5 Declarative Component Designs
+
+For each declarative component listed in Section 3, provide the design spec below.
+Use the Layer 2 template from `references/metadata/{type}.md`.
+
+#### {Component Name}
+
+| Attribute | Value |
+|---|---|
+| Type | [Flow type / Validation Rule / Permission Set / etc.] |
+| Object | [Target object] |
+| [Type-specific attributes] | [Values] |
+
+**Element Walkthrough:** (for Flows and Approval Processes)
+1. [Element 1]
+2. [Element 2]
+...
+
+**Security Notes:**
+- [CRUD/FLS / sharing / run mode considerations]
 
 ### 4. Data Model Changes
 

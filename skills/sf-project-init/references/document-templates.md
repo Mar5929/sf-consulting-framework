@@ -58,7 +58,7 @@ The 16 Golden Rules (confirmed or modified during interview):
 Plus any engagement-specific rules from the interview.
 
 14. **Living Document Sync** — All living documents (REQUIREMENTS, BACKLOG, TECHNICAL_SPEC, wiki pages, COMPONENT_REGISTRY) must be kept in sync. Update all affected docs when modifying code. Never leave a document stale.
-15. **Component Registry Updates (Non-Negotiable)** — Every component create/modify/delete must update `docs/COMPONENT_REGISTRY.md` immediately.
+15. **Component Registry & Manifest Updates (Non-Negotiable)** — Every component create/modify/delete must update both `docs/COMPONENT_REGISTRY.md` and `docs/COMPONENT_MANIFEST.yaml` immediately. Update `docs/domains/{domain-id}.md` if domain scope or dependencies change.
 16. **UI Testing with Playwright** — Before starting UI work (LWC, FlexCard, Experience Cloud page), ask user: "This involves UI work. Should I use the Playwright screenshot loop?" If yes, follow build → screenshot → review → iterate loop.
 
 ### Section 3 — Workspace Structure
@@ -68,6 +68,9 @@ project-root/
 ├── CLAUDE.md
 ├── sfdx-project.json
 ├── docs/                    # Living documentation
+│   ├── domains/             # Per-domain context files (lazy-loading retrieval)
+│   ├── COMPONENT_MANIFEST.yaml  # Machine-readable domain-tagged index
+│   └── COMPONENT_REGISTRY.md    # Human-readable component inventory
 ├── deliverables/            # Client-facing documents
 ├── force-app/main/default/  # SFDX source
 ├── config/                  # Scratch org definitions
@@ -90,6 +93,8 @@ Event-to-action table (only include rows for enabled documents):
 | Wiki application area affected | Update relevant `wiki/applications/{app}/` pages |
 | UI component development starts | Ask user about Playwright screenshot loop |
 | Component created/modified/deleted | Update `docs/COMPONENT_REGISTRY.md` (NON-NEGOTIABLE) |
+| Component created/modified/deleted | Update `docs/COMPONENT_MANIFEST.yaml` with domain, purpose, and deps |
+| Domain scope or dependencies changed | Update `docs/domains/{domain-id}.md` |
 | Design standard established/changed | Update `wiki/ways-of-working/design-standards.md` |
 | Work item started | Set Linear issue to "In Progress", update `BACKLOG.md` status |
 | Work item completed | Set Linear issue to "Done", mark `[DONE]` in `BACKLOG.md` |
@@ -182,6 +187,16 @@ sf project deploy quick -i <jobId>    # Quick deploy after validation
    - Which items are ready to build (prerequisites met, requirements documented)
 7. Ask: "Which item would you like to start with, or should I work through [current sprint] in order?"
 
+**When working on a specific item, use the Component Manifest Retrieval Protocol instead of reading all source:**
+
+1. **Scope** — Read the `domains:` section of `docs/COMPONENT_MANIFEST.yaml` (~50 lines). Identify 1-3 relevant domains for the work item.
+2. **Domain Context** — Read `docs/domains/{domain-id}.md` for those domains (50-100 lines each).
+3. **Components** — Grep the manifest for domain-specific components: `grep "domain: {domain-id}" docs/COMPONENT_MANIFEST.yaml`
+4. **Dependencies** — If cross-domain dependencies are found, load additional domain context files.
+5. **Source Code** — Only now read actual `force-app/` files — and only the specific ones identified.
+
+This loads 200-500 lines of context vs. 3000-6000 for the full registry.
+
 ### Section 9 — Git Commit Protocol
 - Format: `feat(BL-XXX): Short summary`
 - Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `config`
@@ -226,7 +241,7 @@ Empty at project start. Populated during development.
 4. **TDD** — Write the test class first with expected behaviors and assertions, then implement until all tests pass. Test-first is the default; skip only for pure metadata/declarative work (fields, page layouts, flows).
 5. **Test** — `sf apex run test --target-org {scratch-org-alias} --result-format human --code-coverage`
 6. **Validate** — `sf project deploy validate --target-org {qa-org-alias} --test-level RunLocalTests`
-7. **Update docs** — Per Section 4: COMPONENT_REGISTRY, CODE_ATLAS, CHANGELOG, DATA_MODEL (if objects touched), and any affected wiki pages
+7. **Update docs** — Per Section 4: COMPONENT_REGISTRY, COMPONENT_MANIFEST, domain context files, CODE_ATLAS, CHANGELOG, DATA_MODEL (if objects touched), and any affected wiki pages
 8. **Commit** — `feat(BL-XXX): Short summary` per Section 9. Include doc updates in the same commit.
 9. **Update Linear** — Set the issue status to "Done"
 10. **Next item** — Present the next sprint item and begin again from step 1. Continue until the user says stop or the sprint backlog is complete.
@@ -693,7 +708,7 @@ These standards apply to all Salesforce engagements unless overridden by client-
 12. CPU time budget — monitor, use Queueable/Batch for heavy processing
 13. Naming conventions — follow firm standard
 14. Living document sync — update all affected docs when modifying code
-15. Component registry updates (non-negotiable) — every component change updates the registry
+15. Component registry & manifest updates (non-negotiable) — every component change updates both registry and manifest
 16. UI testing with Playwright — use screenshot loop for UI work when applicable
 
 ### Well-Architected Patterns
@@ -755,6 +770,101 @@ Bootstrap prompt for Claude:
 - Read CLAUDE.md → CODE_ATLAS.md → BACKLOG.md
 - Summary of engagement context
 - Current phase and priority items
+
+---
+
+## COMPONENT_MANIFEST.yaml Schema
+
+**Purpose:** Machine-readable component index for domain-based retrieval. Enables Claude to go from "user story about X" to "these 15 components are relevant" without reading everything.
+
+**File location:** `docs/COMPONENT_MANIFEST.yaml`
+
+**Structure:**
+
+```yaml
+version: 1
+last_updated: "[Date]"
+
+# ── Domain Index ──────────────────────────────────────────────────
+# Read this section first (~50 lines) to identify relevant domains.
+# Then load only the domain context files you need.
+domains:
+  - id: [kebab-case-domain-id]
+    label: "[Human-readable domain name]"
+    description: "[One-line: what this domain covers]"
+    products: [[salesforce-product-ids]]
+
+# ── Components ────────────────────────────────────────────────────
+# Grep this section by domain to find relevant components.
+# Example: grep "domain: lead-management" docs/COMPONENT_MANIFEST.yaml
+components: []
+# Each component entry:
+#   - api_name: "ComponentApiName"
+#     type: [apex_class | apex_trigger | flow | lwc | custom_object | custom_field |
+#            permission_set | validation_rule | page_layout | custom_metadata_type |
+#            platform_event | named_credential]
+#     subtype: [service | handler | selector | domain | utility | test | batch |
+#               schedulable | invocable | controller | record_triggered | screen |
+#               scheduled | autolaunched | platform_event_triggered | junction_object |
+#               lookup | master_detail | null]
+#     domain: [domain-id]
+#     purpose: "[One-line description]"
+#     depends_on: [list of api_names this component calls or references]
+#     depended_by: [list of api_names that call or reference this component]
+#     requirements: [REQ-XXX ids]
+#     backlog: [BL-XXX ids]
+#     declarative_design: [pending | designed | approved | null]
+#     status: [active | draft | deprecated | removed]
+```
+
+**Generation rules:**
+- Pre-populate `domains:` from Round 3 product selections and Round 4 business process answers
+- Leave `components:` as an empty list — populated during development
+- Domain IDs use kebab-case (e.g., `lead-management`, `territory-management`)
+- The `declarative_design` field applies only to declarative components (Flows, objects, validation rules, permission sets, etc.) and aligns with the "Declarative Design Status" column in the solutioning skill's Components table
+- Non-declarative components (Apex, LWC) set `declarative_design: null`
+
+---
+
+## Domain Context File Template
+
+**Purpose:** Short (50-100 line) retrieval-optimized summary per business domain. Claude reads these instead of scanning the full manifest or source.
+
+**File location:** `docs/domains/{domain-id}.md`
+
+**Template:**
+
+```markdown
+# Domain: [Domain Label]
+
+## Business Purpose
+[2-3 sentences: what this domain covers, key business processes, who uses it.]
+
+## Key Objects
+- [Object API Name] — [purpose]
+
+## Key Automation
+- [Trigger/Flow/Handler chain descriptions]
+
+## Key UI
+- [LWC/FlexCard/page descriptions]
+
+## Dependencies on Other Domains
+- **Reads from:** [domain-ids this domain consumes data from]
+- **Writes to:** [domain-ids this domain pushes data to]
+
+## Current Decisions
+- [ADR-XXX references relevant to this domain]
+
+## Open Issues
+- [BL-XXX references for unresolved items in this domain]
+```
+
+**Generation rules:**
+- Create one stub file per domain identified during the interview (Round 3 products + Round 4 business processes)
+- Stub files have the template structure with placeholder text
+- Keep files lean: summaries only, ~100 lines max. The manifest has the exhaustive component list.
+- If client metadata conventions (from Round 8) apply to specific domains, note which domains have client-specific conventions that override Well-Architected defaults
 
 ---
 

@@ -22,6 +22,9 @@ const SFTechStackData = (() => {
     { id: 'skill-pptx', name: 'pptx', category: 'skill', description: 'Generate executive presentations, design review decks, training materials.' },
     { id: 'skill-drawio', name: 'drawio', category: 'skill', description: 'Architecture diagrams, ERDs, integration flow diagrams.' },
     { id: 'skill-frontend', name: 'Frontend Design', category: 'skill', description: 'LWC component design and UI prototyping.' },
+    { id: 'skill-sf-arch', name: 'sf-architect-\nsolutioning', category: 'skill', description: 'Solution planning, declarative design, metadata XML generation.' },
+    { id: 'component-manifest', name: 'Component\nManifest', category: 'skill', description: 'YAML manifest + domain files for lazy-load context retrieval.' },
+    { id: 'metadata-refs', name: 'Metadata\nReferences', category: 'skill', description: '8 declarative metadata templates: Flows, objects, permissions, layouts.' },
 
     // ── Plugins ──
     { id: 'plug-superpowers', name: 'Superpowers', category: 'plugin', description: 'Enhanced workflow — brainstorming, TDD, debugging, planning, git worktrees, verification.' },
@@ -58,6 +61,11 @@ const SFTechStackData = (() => {
     { source: 'claude-code', target: 'skill-pptx' },
     { source: 'claude-code', target: 'skill-drawio' },
     { source: 'claude-code', target: 'skill-frontend' },
+    { source: 'claude-code', target: 'skill-sf-arch' },
+    { source: 'claude-code', target: 'component-manifest' },
+    { source: 'skill-sf-arch', target: 'metadata-refs' },
+    { source: 'skill-sf-arch', target: 'component-manifest' },
+    { source: 'skill-sf-arch', target: 'mcp-context7' },
 
     // Hub → Plugins
     { source: 'claude-code', target: 'plug-superpowers' },

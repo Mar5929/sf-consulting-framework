@@ -19,6 +19,8 @@ const SfToolMappingData = (() => {
     { id: 'superpowers', name: 'Superpowers', category: 'plugin' },
     { id: 'sfdx-cli', name: 'SFDX CLI', category: 'external' },
     { id: 'code-review', name: 'Code Review', category: 'plugin' },
+    { id: 'sf-arch', name: 'sf-architect-solutioning', category: 'global-skill' },
+    { id: 'manifest', name: 'Component Manifest', category: 'project-skill' },
   ];
 
   const matrix = {
@@ -34,6 +36,8 @@ const SfToolMappingData = (() => {
     'superpowers':  { 'Discovery': 'Brainstorming', 'Design': 'Planning', 'Build': 'TDD, debugging, plans', 'Test': 'Systematic debugging', 'Deploy': 'Verification', 'Managed Services': 'Debugging' },
     'sfdx-cli':     { 'Discovery': null, 'Design': 'Org describe', 'Build': 'Source push/pull', 'Test': 'Run tests', 'Deploy': 'Deploy commands', 'Managed Services': 'Deploy commands' },
     'code-review':  { 'Discovery': null, 'Design': null, 'Build': 'PR code review', 'Test': null, 'Deploy': 'Final review', 'Managed Services': 'Change review' },
+    'sf-arch':      { 'Discovery': null, 'Design': 'Declarative design, solution planning', 'Build': 'Pre-implementation gate, metadata XML generation', 'Test': null, 'Deploy': null, 'Managed Services': 'Change impact analysis' },
+    'manifest':     { 'Discovery': null, 'Design': 'Domain scoping', 'Build': 'Lazy-load retrieval, dependency tracking', 'Test': null, 'Deploy': null, 'Managed Services': 'Impact analysis' },
   };
 
   const categories = [

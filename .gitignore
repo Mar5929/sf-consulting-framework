@@ -1,0 +1,12 @@
+Braindump.md
+AssetReferences
+
+# Playwright
+screenshots/
+.playwright-mcp/
+
+# Temporary document generation artifacts
+unpacked/
+*.py
+*.mjs
+*.cjs

@@ -31,6 +31,11 @@ Use this checklist before writing any code, creating any metadata, or building a
   - All existing components in the area are documented
   - Reusable components are identified (don't rebuild what exists)
 
+- [ ] **Component Manifest current for affected domains** — `docs/COMPONENT_MANIFEST.yaml` is up to date for the affected domain(s)
+  - Domain tags, dependencies, and component entries are current
+  - `docs/domains/{domain-id}.md` context files reflect current state
+  - Cross-domain dependencies are documented
+
 - [ ] **Design Standards** — Solution complies with `wiki/ways-of-working/design-standards.md`
   - Framework defaults (16 Golden Rules) are followed
   - Client-specific standards are respected where they differ
@@ -38,6 +43,9 @@ Use this checklist before writing any code, creating any metadata, or building a
 ## Architectural Assessment
 
 - [ ] **Declarative-first evaluated** — Can this be done with Flows, validation rules, formula fields, or configuration before writing code?
+- [ ] **Declarative components designed and approved** — All Flows, validation rules,
+  permission sets, and other metadata have been designed using the declarative design
+  template and approved before XML generation
 - [ ] **Governor limits assessed** — SOQL queries, DML statements, CPU time, heap size within limits at expected data volumes
 - [ ] **Security model reviewed** — CRUD/FLS enforcement plan, sharing implications, data classification for new fields
 - [ ] **Integration impact assessed** — Callout limits, async vs. sync decision, error handling, retry logic (if applicable)

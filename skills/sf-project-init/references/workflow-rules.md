@@ -12,6 +12,7 @@ These rules apply after scaffolding is created. Include the relevant rules in th
 4. **Atomic consistency.** If a change affects multiple docs, update all of them together.
 5. **Summarize, don't dump.** Keep entries concise and scannable — tables and bullet lists over prose.
 6. **Follow the Update Protocol.** Refer to the event-to-action table in CLAUDE.md Section 4.
+7. **Manifest sync.** Every component change updates both `docs/COMPONENT_REGISTRY.md` (human-readable) and `docs/COMPONENT_MANIFEST.yaml` (machine-readable). The manifest entry must include domain tag, purpose, and dependency lists.
 
 ---
 
@@ -166,11 +167,24 @@ Apply when the project wiki (`wiki/`) is enabled.
 
 ---
 
+## Domain Maintenance Rules
+
+Apply to every engagement that uses the Component Manifest (NON-OPTIONAL).
+
+1. **Granularity target.** Each domain should contain 10-30 components. Split a domain if it exceeds 30 components; merge domains if one has fewer than 5.
+2. **Domain context file freshness.** Update `docs/domains/{domain-id}.md` when key objects, automation, UI, or cross-domain dependencies change. Keep files lean — summaries only, ~100 lines max.
+3. **New domains.** When a new functional area emerges that doesn't fit existing domains, create a new domain entry in the manifest `domains:` section and a corresponding `docs/domains/{domain-id}.md` file.
+4. **Domain splitting.** When splitting a domain, update the manifest `domains:` section, create new domain context files, and re-tag all affected component entries in the manifest.
+5. **Domain merging.** When merging domains, consolidate into a single domain ID, update all component domain tags, merge context files, and remove the obsolete domain entry and file.
+6. **Cross-domain dependencies.** Always keep the "Dependencies on Other Domains" section in domain context files current. When adding a component that reads from or writes to another domain's objects, update both domain files.
+
+---
+
 ## Component Registry Rules
 
 Apply to every engagement (NON-OPTIONAL).
 
-1. **Mandatory updates.** Every component create, modify, or delete **must** update `docs/COMPONENT_REGISTRY.md`. This is non-negotiable — no exceptions, no deferral.
+1. **Mandatory updates.** Every component create, modify, or delete **must** update both `docs/COMPONENT_REGISTRY.md` and `docs/COMPONENT_MANIFEST.yaml`. This is non-negotiable — no exceptions, no deferral.
 2. **All categories tracked.** The registry covers: Custom Objects, Custom Fields, Apex Classes, Apex Triggers, Flows, LWC, Permission Sets, Validation Rules, Page Layouts, Custom Metadata Types, Platform Events, Named Credentials.
 3. **Summary table currency.** Update the summary table (category counts and last-updated dates) whenever entries in a category change.
 4. **Cross-references.** Link registry entries to BL-XXX (backlog items) and REQ-XXX (requirements) where applicable.
@@ -193,7 +207,7 @@ Apply to every engagement (NON-OPTIONAL).
 These constraints apply to every engagement, regardless of entry point or configuration.
 
 1. **Living Document Sync (Rule 14).** All living documents must be kept in sync. When modifying code, update all affected documents (REQUIREMENTS, BACKLOG, TECHNICAL_SPEC, wiki pages, COMPONENT_REGISTRY, CODE_ATLAS, DATA_MODEL). Never leave a document stale.
-2. **Component Registry (Rule 15).** Every component create/modify/delete must update `docs/COMPONENT_REGISTRY.md` immediately. This is non-negotiable.
+2. **Component Registry & Manifest (Rule 15).** Every component create/modify/delete must update both `docs/COMPONENT_REGISTRY.md` and `docs/COMPONENT_MANIFEST.yaml` immediately. Update `docs/domains/{domain-id}.md` if domain scope or dependencies change. This is non-negotiable.
 3. **UI Testing (Rule 16).** Before starting UI work (LWC, FlexCard, Experience Cloud page), ask the user: "This involves UI work. Should I use the Playwright screenshot loop?" If yes, follow the build → screenshot → review → iterate loop.
 4. **Pre-implementation documentation.** Before writing code for a new feature, ensure the BRD/requirements, technical spec, and data model are documented. Use the sf-architect-solutioning skill's pre-implementation gate.
 5. **Architecture-first.** Complex features must go through the sf-architect-solutioning skill before implementation. Simple bug fixes and minor enhancements can proceed directly with document updates.

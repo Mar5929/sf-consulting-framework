@@ -22,8 +22,8 @@ const SFFrameworkOverviewData = (() => {
 
     // Tools lane
     { id: 'tool-init', name: 'sf-project-init', phase: 'tools', category: 'global-skill', description: 'Structured interview, scaffolding, Linear setup', x: 0 },
-    { id: 'tool-design', name: 'Context7 +\nWell-Architected', phase: 'tools', category: 'mcp', description: 'Live docs + curated architectural guidance', x: 1 },
-    { id: 'tool-build', name: 'SFDX CLI +\nSF DX MCP', phase: 'tools', category: 'mcp', description: 'Source push/pull, scratch orgs, deployments', x: 2 },
+    { id: 'tool-design', name: 'Context7 +\nArchitect Skill', phase: 'tools', category: 'mcp', description: 'Live docs + declarative design + Well-Architected guidance', x: 1 },
+    { id: 'tool-build', name: 'SFDX CLI +\nSF DX MCP', phase: 'tools', category: 'mcp', description: 'Source push/pull, scratch orgs, manifest retrieval, deployments', x: 2 },
     { id: 'tool-test', name: 'Playwright +\nApex Tests', phase: 'tools', category: 'plugin', description: 'UI testing, unit testing, code coverage', x: 3 },
     { id: 'tool-deploy', name: 'GitHub Actions\nCI/CD', phase: 'tools', category: 'external', description: 'Automated validation, deployment pipelines', x: 4 },
     { id: 'tool-support', name: 'Linear +\nTicket Process', phase: 'tools', category: 'mcp', description: 'Issue tracking, SLA monitoring', x: 5 },
@@ -31,7 +31,7 @@ const SFFrameworkOverviewData = (() => {
     // Deliverables lane
     { id: 'del-brd', name: 'BRD', phase: 'deliverables', category: 'template', description: 'Business Requirements Document', x: 0 },
     { id: 'del-sdd', name: 'SDD +\nArch Diagrams', phase: 'deliverables', category: 'template', description: 'Solution Design Document + Architecture Diagrams', x: 1 },
-    { id: 'del-code', name: 'CLAUDE.md +\nDocs + Code', phase: 'deliverables', category: 'template', description: 'Project config, living docs, source code', x: 2 },
+    { id: 'del-code', name: 'CLAUDE.md +\nManifest + Code', phase: 'deliverables', category: 'template', description: 'Project config, component manifest, domain docs, source code', x: 2 },
     { id: 'del-test', name: 'Test Plans +\nUAT Scripts', phase: 'deliverables', category: 'template', description: 'Test plans, UAT scripts, coverage reports', x: 3 },
     { id: 'del-release', name: 'Release Notes +\nTraining', phase: 'deliverables', category: 'template', description: 'Deployment docs, training materials', x: 4 },
     { id: 'del-support', name: 'Org Assessment\n+ SLA Docs', phase: 'deliverables', category: 'template', description: 'Health checks, support documentation', x: 5 },
