@@ -58,6 +58,24 @@ Before writing any code or generating any metadata, establish the correct git wo
 4. **Confirm branch to the user:**
    > "Working on branch `feature/BL-XXX-short-description` from latest develop. All changes will be staged here."
 
+5. **Add active work lock entry** (if `docs/.active-work.json` exists):
+   Read `docs/.active-work.json`, add an entry for this work session, commit and push:
+   ```json
+   {
+     "developer": "[your name from CLAUDE.md]",
+     "branch": "feature/BL-XXX-short-description",
+     "domain": "{domain-id}",
+     "files": ["[list key force-app files this work will touch]"],
+     "started": "[current ISO timestamp]",
+     "linear_issue": "RIH-XXX"
+   }
+   ```
+   ```bash
+   git add docs/.active-work.json
+   git commit -m "chore: add active work lock for BL-XXX"
+   git push origin feature/BL-XXX-short-description
+   ```
+
 ---
 
 ## 0.5 Conflict Pre-Check
@@ -329,5 +347,13 @@ After all code, metadata, and docs are complete (Section 6 done):
    ```
 
 5. **Present PR URL to the user** and remind them to request review from the appropriate Code Owners.
+
+6. **Remove active work lock entry** (if `docs/.active-work.json` exists):
+   Read `docs/.active-work.json`, remove your lock entry, commit and push to signal work is complete:
+   ```bash
+   git add docs/.active-work.json
+   git commit -m "chore: remove active work lock for BL-XXX (work complete)"
+   git push origin feature/BL-XXX-short-description
+   ```
 
 ---

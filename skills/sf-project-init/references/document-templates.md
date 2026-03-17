@@ -1206,3 +1206,35 @@ Template for `docs/changelog/sprint-YYYY-MM-DD.md`. One file per sprint, named b
 ## Added
 - `feat(BL-XXX)`: Created AccountService.cls — centralized account management service
 ```
+
+---
+
+## Active Work Lock File Template
+
+Template for `docs/.active-work.json`. Tracks which developer is actively modifying which files. Updated by sf-develop on start and finish. Read by sf-develop's conflict pre-check and CLAUDE.md session startup.
+
+```json
+{
+  "locks": []
+}
+```
+
+**Lock entry schema:**
+```json
+{
+  "developer": "Developer Name",
+  "branch": "feature/BL-XXX-short-description",
+  "domain": "lead-management",
+  "files": [
+    "force-app/main/default/classes/AccountService.cls",
+    "force-app/main/default/classes/AccountService.cls-meta.xml"
+  ],
+  "started": "2026-03-17T10:00:00Z",
+  "linear_issue": "RIH-XXX"
+}
+```
+
+**Protocol:**
+- **On work start (sf-develop Section 0):** Read the file, add own lock entry, commit and push
+- **On work finish (sf-develop Section 7):** Read the file, remove own lock entry, commit and push
+- **On conflict:** Warn the developer with advisory message — do not block

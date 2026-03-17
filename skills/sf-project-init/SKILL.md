@@ -313,7 +313,7 @@ Generate with the **14-section structure** from `references/document-templates.m
 **Section 5 — Coding Standards:** Salesforce-specific: Apex (bulkification, trigger handlers, SOQL best practices), LWC (wire vs imperative, SLDS, accessibility), Flows (naming, documentation)
 **Section 6 — Tech Stack:** Salesforce Platform, SFDX CLI, VS Code, GitHub, GitHub Actions, selected products
 **Section 7 — Key Commands:** SFDX commands grouped by: Org Management, Source Operations, Testing, Deployment
-**Section 8 — Session Startup:** Read CLAUDE.md → CODE_ATLAS.md → BACKLOG.md → ask what to work on. Includes Component Manifest Retrieval Protocol for lazy-loading domain context when working on specific items
+**Section 8 — Session Startup:** Read CLAUDE.md → CODE_ATLAS.md → BACKLOG.md → check `docs/.active-work.json` for active locks → ask what to work on. If `.active-work.json` shows another developer working on files in the same domain, warn: "[Developer] is currently working on [files] for [BL-ID]. Coordinate before modifying these files." Includes Component Manifest Retrieval Protocol for lazy-loading domain context when working on specific items
 **Section 9 — Git Commit Protocol:** GitFlow format, `feat(BL-XXX): summary`
 **Section 10 — Clarification Protocol:** Always clarify: object model changes, sharing rules, security settings, integrations
 **Section 11 — Context Window Management:** Use docs as external memory, reference by path
@@ -416,6 +416,7 @@ project-root/
 │   │   └── sprint-YYYY-MM-DD.md       # One per sprint — edit these, not CHANGELOG.md
 │   ├── DATA_MODEL.md
 │   ├── CODE_ATLAS.md
+│   ├── .active-work.json              # Active developer lock file (auto-maintained by sf-develop)
 │   ├── COMPONENT_REGISTRY.md          # NON-OPTIONAL — auto-generated summary (do not edit directly)
 │   ├── COMPONENT_MANIFEST.yaml        # NON-OPTIONAL — machine-readable domain-tagged index
 │   ├── registry/                      # Per-domain registry files (hand-maintained by developers)
@@ -520,6 +521,14 @@ Generate `docs/COMPONENT_MANIFEST.yaml` with:
 - Empty `components:` list — populated during development
 - Read `references/document-templates.md` for the full YAML schema
 - This is **NON-OPTIONAL** — always generated regardless of user selections
+
+### Active Work Lock File Generation
+
+Generate `docs/.active-work.json` with an empty locks array:
+```json
+{ "locks": [] }
+```
+This file is maintained automatically by the sf-develop skill — developers do not edit it manually.
 
 ### Sprint Changelog Generation
 
