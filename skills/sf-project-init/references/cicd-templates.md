@@ -60,6 +60,63 @@ jobs:
 **Secrets required:**
 - `SF_AUTH_URL` — SFDX auth URL for the target org. Generate with: `sf org display --target-org MyOrg --verbose` → copy the "Sfdx Auth Url" value.
 
+**Multi-user safety jobs (add to sf-validate.yml):**
+
+```yaml
+  check-docs-updated:
+    name: Warn if Component Docs Not Updated
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if component docs were updated
+        run: |
+          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+
+          # If Apex/LWC/Flow files changed, check for registry updates
+          CODE_CHANGED=$(echo "$CHANGED" | grep -E '^force-app/' || true)
+          REGISTRY_CHANGED=$(echo "$CHANGED" | grep -E '^docs/(COMPONENT_REGISTRY|COMPONENT_MANIFEST|registry/)' || true)
+
+          if [ -n "$CODE_CHANGED" ] && [ -z "$REGISTRY_CHANGED" ]; then
+            echo "::warning::Code files changed but component docs were not updated."
+            echo "::warning::Per Golden Rule 15, every component change must update COMPONENT_REGISTRY.md, COMPONENT_MANIFEST.yaml, or the relevant docs/registry/{domain}.md file."
+            echo ""
+            echo "Changed code files:"
+            echo "$CODE_CHANGED"
+          else
+            echo "✅ Component documentation is up to date."
+          fi
+
+  check-commit-format:
+    name: Warn on Non-Standard Commit Messages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check commit message format
+        run: |
+          COMMITS=$(git log --format='%s' origin/${{ github.base_ref }}..HEAD)
+          BAD_COMMITS=$(echo "$COMMITS" | grep -v -E '^(feat|fix|chore|docs|test|refactor)\(BL-[0-9]+\):' || true)
+
+          if [ -n "$BAD_COMMITS" ]; then
+            echo "::warning::Some commits don't follow the required format: 'feat(BL-XXX): description'"
+            echo "::warning::Expected pattern: (feat|fix|chore|docs|test|refactor)(BL-NNN): message"
+            echo ""
+            echo "Non-compliant commits:"
+            echo "$BAD_COMMITS"
+          else
+            echo "✅ All commits follow the feat(BL-XXX): format."
+          fi
+```
+
+> **Note:** Both jobs use `::warning::` (not `::error::`) — they surface issues without blocking deployment.
+
 ---
 
 ## sf-deploy.yml — Deploy to Target Org
