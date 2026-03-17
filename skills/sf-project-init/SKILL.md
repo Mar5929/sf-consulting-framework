@@ -48,6 +48,9 @@ Ask these questions to establish the engagement:
 - What is the **client name** and **project name**?
 - What is your **role** on this engagement? (Lead architect, developer, admin, consultant)
 - How large is the **consulting team**? Who else will be working in this repo?
+- Are there **non-technical team members** (PMs, BAs, QAs) who will work in this repo? If yes:
+  - Which roles? (PM, BA, QA, Analyst, Stakeholder)
+  - Will non-technical members **edit documentation directly in the repo**, or will they use Linear/Notion/external tools instead? (Knowing this determines whether we need CONTRIBUTING.md role guides and stricter CI guards)
 - What is the **entry point** for this engagement?
   - **Discovery / Greenfield** — Starting from scratch, full requirements gathering
   - **Build Phase** — Requirements exist, jumping into development
@@ -164,6 +167,10 @@ Read `references/document-templates.md` for template structures.
 - **Code review policy** — require PR review before merge? Minimum reviewers?
 - **Test coverage target** — Salesforce requires 75%, recommend **85%+**
 - **Apex code standards** — accept the 16 Golden Rules as defaults? (see below)
+- **Multi-user safety setup** — For teams with multiple contributors:
+  - Should we set up **CODEOWNERS** to enforce path-based review requirements? (Recommended if team > 1; prevents wrong-role changes from merging without approval)
+  - Should we set up a **docs-only validation workflow** (`docs-validate.yml`) to prevent accidental code changes in documentation PRs? (Recommended if any non-technical members use the repo directly)
+  - *(If team > 3)* Recommend: **per-domain component registry split** (`docs/registry/{domain}.md`) to eliminate merge conflicts between developers working on different domains simultaneously. Enable this?
 
 ### Round 7 — Security & Compliance
 
@@ -402,6 +409,7 @@ project-root/
 ├── CLAUDE.md
 ├── README.md
 ├── GETTING_STARTED.md
+├── CONTRIBUTING.md                    # Role-specific workflow guide (if non-technical users)
 ├── sfdx-project.json
 ├── .forceignore
 ├── .gitignore
@@ -545,6 +553,13 @@ Generate `docs/domains/{domain-id}.md` stub files:
 - Populate Business Purpose from interview answers (Round 3 product context, Round 4 business processes)
 - Leave Key Objects, Key Automation, Key UI sections as placeholders — populated during development
 - If client metadata conventions (captured in Round 8 `## Client Metadata Conventions`) apply to specific domains, note which domains have client-specific conventions that override Well-Architected defaults
+
+### CONTRIBUTING.md Generation (Conditional)
+
+If Round 1 revealed non-technical team members who will use the repo directly:
+- Generate `CONTRIBUTING.md` at the project root using the template from `references/document-templates.md`
+- Customize the role sections based on which non-technical roles are present (PM, BA, QA)
+- If only technical developers use the repo, skip this file
 
 ### CODEOWNERS Generation
 

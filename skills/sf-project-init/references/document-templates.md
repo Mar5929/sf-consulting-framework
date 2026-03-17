@@ -1238,3 +1238,131 @@ Template for `docs/.active-work.json`. Tracks which developer is actively modify
 - **On work start (sf-develop Section 0):** Read the file, add own lock entry, commit and push
 - **On work finish (sf-develop Section 7):** Read the file, remove own lock entry, commit and push
 - **On conflict:** Warn the developer with advisory message — do not block
+
+---
+
+## CONTRIBUTING.md Template
+
+Template for `CONTRIBUTING.md` in the project root. Generated when non-technical team members will use the repo directly. Provides role-specific git workflow guides.
+
+````markdown
+# Contributing to [Project Name]
+
+This guide covers how different roles contribute to this repository. Read the section for your role.
+
+---
+
+## For Developers
+
+Developers own the Salesforce source code and CI/CD configuration.
+
+### Your workflow
+1. Pick up a Linear issue assigned to you
+2. Run the sf-develop skill in Claude Code — it will guide you through branch creation, implementation, and PR creation
+3. All work goes on a `feature/BL-XXX-description` branch — never commit directly to `develop`
+4. Your PR must pass `sf-validate` CI checks before merge
+
+### Files you own
+- `force-app/` — Salesforce source code
+- `config/` — SFDX configuration
+- `docs/COMPONENT_REGISTRY.md`, `docs/COMPONENT_MANIFEST.yaml`, `docs/registry/`
+- `.github/workflows/`
+
+---
+
+## For Project Managers (PMs)
+
+PMs manage the project backlog, timeline, and stakeholder communication.
+
+### Your workflow
+- **Backlog:** Manage all backlog items in **Linear** (not BACKLOG.md — it's auto-generated)
+- **Documentation:** Edit `wiki/ways-of-working/roadmap-timelines.md`, `wiki/ways-of-working/recurring-meetings.md`, and `deliverables/presentations/`
+- **Raising issues:** Create issues in Linear; developers will pick them up
+
+### Your git workflow (if editing docs directly)
+```bash
+git checkout develop
+git pull origin develop
+git checkout -b docs/pm-update-roadmap
+# Make your changes
+git add wiki/ways-of-working/roadmap-timelines.md
+git commit -m "docs: update roadmap timeline for Q2"
+git push origin docs/pm-update-roadmap
+# Create PR on GitHub → request review from @tech-lead
+```
+
+### Files you own
+- `wiki/ways-of-working/roadmap-timelines.md`
+- `wiki/ways-of-working/recurring-meetings.md`
+- `deliverables/presentations/`
+
+---
+
+## For Business Analysts (BAs)
+
+BAs own requirements documentation and business process definitions.
+
+### Your workflow
+- **Requirements:** Edit `deliverables/brd/` and `wiki/applications/{app}/requirements.md`
+- **Never edit** `force-app/`, `config/`, or `docs/COMPONENT_MANIFEST.yaml`
+
+### Your git workflow
+```bash
+git checkout develop
+git pull origin develop
+git checkout -b docs/ba-update-requirements
+# Make your changes to deliverables/ or wiki/
+git add deliverables/brd/requirements-update.md
+git commit -m "docs: update BRD with new lead routing requirements"
+git push origin docs/ba-update-requirements
+# Create PR → request review from @pm-team
+```
+
+### Files you own
+- `deliverables/brd/`
+- `wiki/applications/{app}/requirements.md`
+- `wiki/applications/{app}/process-flows.md`
+
+---
+
+## For QA Engineers
+
+QA owns test plans, test scripts, and defect documentation.
+
+### Your git workflow
+```bash
+git checkout develop
+git pull origin develop
+git checkout -b docs/qa-test-plan-sprint-3
+# Make your changes to deliverables/test-plans/
+git add deliverables/test-plans/sprint-3-test-plan.md
+git commit -m "docs: add sprint 3 UAT test scripts"
+git push origin docs/qa-test-plan-sprint-3
+# Create PR → request review from @pm-team
+```
+
+### Files you own
+- `deliverables/test-plans/`
+
+---
+
+## Commit Message Format
+
+All commits should follow this format:
+```
+type: short description
+
+Types: feat | fix | docs | chore | test | refactor
+Examples:
+  docs: update BRD with new lead routing requirements
+  feat(BL-042): create AccountService Apex class
+```
+
+## PR Checklist
+
+Before submitting a PR:
+- [ ] I only changed files in my role's ownership area
+- [ ] I did NOT use `git add .` — I staged specific files by name
+- [ ] My commit message follows the format above
+- [ ] I've requested review from the appropriate Code Owners
+````
