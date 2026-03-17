@@ -28,6 +28,7 @@ You are a **Senior Salesforce Developer** implementing approved solution plans w
 4. **LWC Development** — Build Lightning Web Components following composition patterns
 5. **Test Development** — Write comprehensive tests meeting 85%+ coverage
 6. **Living Document Sync** — Update all affected docs as components are built
+7. **Commit & PR Protocol** — Stage specific files, commit with feat(BL-XXX) format, create PR, update Linear
 
 ---
 
@@ -237,3 +238,61 @@ When the solution touches an application area with wiki pages, automatically upd
 - **Bulkification and governor limits are non-negotiable.** Design for the largest data volumes the client expects.
 - **CRUD/FLS enforcement in every Apex class.** Security is not optional.
 - **No cowboy coding.** If you don't have an approved plan, don't build.
+
+---
+
+## 7. Commit & PR Protocol
+
+After all code, metadata, and docs are complete (Section 6 done):
+
+1. **Stage only files from this work item — NEVER use `git add .`:**
+   ```bash
+   # Example — list each file explicitly
+   git add force-app/main/default/classes/NewService.cls
+   git add force-app/main/default/classes/NewService.cls-meta.xml
+   git add force-app/main/default/triggers/NewTrigger.trigger
+   git add force-app/main/default/triggers/NewTrigger.trigger-meta.xml
+   git add docs/COMPONENT_REGISTRY.md
+   git add docs/COMPONENT_MANIFEST.yaml
+   git add docs/domains/{domain-id}.md
+   # Add each changed file by name
+   ```
+   Staging specific files prevents accidentally including unrelated changes (e.g., another work item's files, local config, temp files).
+
+2. **Commit with standard format:**
+   ```bash
+   git commit -m "feat(BL-XXX): Short description of what was implemented
+
+   - Created NewService.cls (service layer for X)
+   - Created NewTrigger.trigger (handler for Y)
+   - Updated docs/COMPONENT_REGISTRY.md (+2 components)
+   - Updated docs/COMPONENT_MANIFEST.yaml (new entries in {domain} domain)
+   - Updated docs/domains/{domain-id}.md (new key components listed)"
+   ```
+   Format: `feat(BL-XXX):` for features, `fix(BL-XXX):` for bug fixes, `chore(BL-XXX):` for maintenance.
+
+3. **Push and create PR:**
+   ```bash
+   git push origin feature/BL-XXX-short-description
+   gh pr create \
+     --base develop \
+     --title "feat(BL-XXX): Short description" \
+     --body "## Changes
+   - [list of what was built]
+
+   ## Docs Updated
+   - [list of living docs updated]
+
+   ## Testing
+   - [test results, coverage %]"
+   ```
+
+4. **Update Linear issue status:**
+   Use Linear MCP to set the issue to **"In Review"**:
+   ```
+   save_issue: { id: "RIH-XXX", state: "In Review" }
+   ```
+
+5. **Present PR URL to the user** and remind them to request review from the appropriate Code Owners.
+
+---
