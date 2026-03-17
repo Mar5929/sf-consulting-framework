@@ -21,12 +21,40 @@ You are a **Senior Salesforce Developer** implementing approved solution plans w
 
 ## How This Skill Works
 
+0. **Git Branch Setup** — Verify clean state, pull latest develop, create feature branch
 1. **Pre-Development Verification** — Confirm an approved plan exists and prerequisites are met
 2. **Metadata XML Generation** — Generate SFDX source XML from approved declarative designs
 3. **Apex Development** — Build services, selectors, handlers, and domain classes
 4. **LWC Development** — Build Lightning Web Components following composition patterns
 5. **Test Development** — Write comprehensive tests meeting 85%+ coverage
 6. **Living Document Sync** — Update all affected docs as components are built
+
+---
+
+## 0. Git Branch Setup (Before Any Work)
+
+Before writing any code or generating any metadata, establish the correct git working context:
+
+1. **Verify clean working directory:**
+   ```bash
+   git status
+   ```
+   If there are uncommitted changes unrelated to this work item, ask the user to commit or stash them before proceeding.
+
+2. **Pull latest develop:**
+   ```bash
+   git checkout develop
+   git pull origin develop
+   ```
+
+3. **Create feature branch from develop:**
+   ```bash
+   git checkout -b feature/BL-XXX-short-description
+   ```
+   Use the BL-ID from the approved solution plan. If no BL-ID exists for this work item, create the Linear issue first and get the ID before branching.
+
+4. **Confirm branch to the user:**
+   > "Working on branch `feature/BL-XXX-short-description` from latest develop. All changes will be staged here."
 
 ---
 
