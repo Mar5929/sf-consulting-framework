@@ -60,6 +60,95 @@ jobs:
 **Secrets required:**
 - `SF_AUTH_URL` — SFDX auth URL for the target org. Generate with: `sf org display --target-org MyOrg --verbose` → copy the "Sfdx Auth Url" value.
 
+**Multi-user safety jobs (add to sf-validate.yml):**
+
+```yaml
+  check-docs-updated:
+    name: Warn if Component Docs Not Updated
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if component docs were updated
+        run: |
+          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+
+          # If Apex/LWC/Flow files changed, check for registry updates
+          CODE_CHANGED=$(echo "$CHANGED" | grep -E '^force-app/' || true)
+          REGISTRY_CHANGED=$(echo "$CHANGED" | grep -E '^docs/(COMPONENT_REGISTRY|COMPONENT_MANIFEST|registry/)' || true)
+
+          if [ -n "$CODE_CHANGED" ] && [ -z "$REGISTRY_CHANGED" ]; then
+            echo "::warning::Code files changed but component docs were not updated."
+            echo "::warning::Per Golden Rule 15, every component change must update COMPONENT_REGISTRY.md, COMPONENT_MANIFEST.yaml, or the relevant docs/registry/{domain}.md file."
+            echo ""
+            echo "Changed code files:"
+            echo "$CODE_CHANGED"
+          else
+            echo "✅ Component documentation is up to date."
+          fi
+
+  check-commit-format:
+    name: Warn on Non-Standard Commit Messages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check commit message format
+        run: |
+          COMMITS=$(git log --format='%s' origin/${{ github.base_ref }}..HEAD)
+          BAD_COMMITS=$(echo "$COMMITS" | grep -v -E '^(feat|fix|chore|docs|test|refactor)\(BL-[0-9]+\):' || true)
+
+          if [ -n "$BAD_COMMITS" ]; then
+            echo "::warning::Some commits don't follow the required format: 'feat(BL-XXX): description'"
+            echo "::warning::Expected pattern: (feat|fix|chore|docs|test|refactor)(BL-NNN): message"
+            echo ""
+            echo "Non-compliant commits:"
+            echo "$BAD_COMMITS"
+          else
+            echo "✅ All commits follow the feat(BL-XXX): format."
+          fi
+```
+
+> **Note:** Both `check-docs-updated` and `check-commit-format` use `::warning::` (not `::error::`) — they surface issues without blocking deployment.
+
+```yaml
+  validate-manifest:
+    name: Validate COMPONENT_MANIFEST.yaml Structure
+    runs-on: ubuntu-latest
+    if: contains(join(github.event.pull_request.changed_files.*.filename, ','), 'COMPONENT_MANIFEST')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate YAML structure
+        run: |
+          pip install pyyaml --break-system-packages
+          python3 -c "
+          import yaml, sys
+          try:
+              with open('docs/COMPONENT_MANIFEST.yaml') as f:
+                  data = yaml.safe_load(f)
+              assert 'version' in data, 'Missing required field: version'
+              assert 'domains' in data, 'Missing required field: domains'
+              assert 'components' in data, 'Missing required field: components'
+              print('✅ COMPONENT_MANIFEST.yaml is valid YAML with required structure.')
+          except AssertionError as e:
+              print(f'::error::COMPONENT_MANIFEST.yaml validation failed: {e}')
+              sys.exit(1)
+          except yaml.YAMLError as e:
+              print(f'::error::COMPONENT_MANIFEST.yaml is not valid YAML: {e}')
+              sys.exit(1)
+          "
+```
+
+> **Note:** `validate-manifest` uses `::error::` and fails the check — a corrupt manifest is a hard blocker.
+
 ---
 
 ## sf-deploy.yml — Deploy to Target Org
@@ -229,8 +318,9 @@ jobs:
 /**
  * Linear → BACKLOG.md Sync Script
  *
- * Fetches all issues from a Linear project and updates docs/BACKLOG.md.
- * Linear is the source of truth. Items in BACKLOG.md not in Linear are flagged.
+ * Fetches all issues from a Linear project and FULLY REGENERATES docs/BACKLOG.md.
+ * Linear is the single source of truth. BACKLOG.md is read-only — do not edit it directly.
+ * All backlog changes must be made in Linear; this script will reflect them on the next run.
  *
  * Required environment variables:
  *   LINEAR_API_KEY    — Personal API key with read access
@@ -286,95 +376,52 @@ async function main() {
 
   console.log(`Fetched ${issues.length} issues from Linear`);
 
-  // Read existing BACKLOG.md
-  let existingContent = '';
-  if (fs.existsSync(BACKLOG_PATH)) {
-    existingContent = fs.readFileSync(BACKLOG_PATH, 'utf-8');
-  }
-
-  // Extract existing BL-XXX IDs from BACKLOG.md
-  const existingIds = new Set();
-  const blPattern = /\|\s*(BL-\d+)\s*\|/g;
-  let match;
-  while ((match = blPattern.exec(existingContent)) !== null) {
-    existingIds.add(match[1]);
-  }
-
-  // Build Linear ID set
-  const linearIds = new Set(issues.map(i => i.identifier));
-
-  // Flag items in BACKLOG.md not in Linear
-  let updatedContent = existingContent;
-  for (const id of existingIds) {
-    if (!linearIds.has(id)) {
-      const flagPattern = new RegExp(`(\\|\\s*${id}\\s*\\|)`, 'g');
-      updatedContent = updatedContent.replace(flagPattern, `| ${id} [NOT IN LINEAR] |`);
-    }
-  }
-
-  // Group issues by milestone
+  // Group issues by milestone, then sort by priority within each milestone
   const byMilestone = {};
   for (const issue of issues) {
-    if (!byMilestone[issue.milestone]) {
-      byMilestone[issue.milestone] = [];
-    }
-    byMilestone[issue.milestone].push(issue);
+    const ms = issue.milestone;
+    if (!byMilestone[ms]) byMilestone[ms] = [];
+    byMilestone[ms].push(issue);
+  }
+  for (const ms of Object.keys(byMilestone)) {
+    byMilestone[ms].sort((a, b) => (a.priority || 5) - (b.priority || 5));
   }
 
-  // Generate sync summary
-  const summaryLines = [
+  // Generate complete BACKLOG.md
+  const lines = [
+    '<!-- AUTO-GENERATED — Do not edit directly. Update issues in Linear. -->',
+    `<!-- Last synced: ${new Date().toISOString()} -->`,
+    '',
+    `# ${project.name} — Backlog`,
+    '',
+    `**Source:** Linear project \`${process.env.LINEAR_PROJECT_ID}\``,
+    `**Synced:** ${new Date().toISOString().split('T')[0]}`,
+    `**Total issues:** ${issues.length}`,
     '',
     '---',
     '',
-    `## Linear Sync Summary (${new Date().toISOString().split('T')[0]})`,
-    '',
-    `**Project:** ${project.name}`,
-    `**Issues:** ${issues.length}`,
-    '',
-    '| Identifier | Title | Priority | Status | Assignee | Milestone |',
-    '|---|---|---|---|---|---|',
   ];
 
-  // Sort by priority (1=urgent, 4=low, 0=none)
-  issues.sort((a, b) => (a.priority || 5) - (b.priority || 5));
+  // Sort milestones alphabetically (or by sortOrder if available)
+  const milestones = Object.keys(byMilestone).sort();
 
-  for (const issue of issues) {
-    summaryLines.push(
-      `| ${issue.identifier} | ${issue.title} | ${issue.priorityLabel} | ${issue.status} | ${issue.assignee} | ${issue.milestone} |`
-    );
-  }
-
-  // Append or update sync summary in BACKLOG.md
-  const syncHeader = '## Linear Sync Summary';
-  if (updatedContent.includes(syncHeader)) {
-    // Replace existing sync summary
-    const syncStart = updatedContent.indexOf(syncHeader);
-    const nextSection = updatedContent.indexOf('\n## ', syncStart + syncHeader.length);
-    if (nextSection > -1) {
-      updatedContent = updatedContent.substring(0, syncStart) + summaryLines.join('\n') + '\n' + updatedContent.substring(nextSection);
-    } else {
-      updatedContent = updatedContent.substring(0, syncStart) + summaryLines.join('\n') + '\n';
+  for (const ms of milestones) {
+    const msIssues = byMilestone[ms];
+    lines.push(`## ${ms}`);
+    lines.push('');
+    lines.push('| Identifier | Title | Priority | Status | Assignee |');
+    lines.push('|---|---|---|---|---|');
+    for (const issue of msIssues) {
+      lines.push(`| ${issue.identifier} | ${issue.title} | ${issue.priorityLabel} | ${issue.status} | ${issue.assignee} |`);
     }
-  } else {
-    updatedContent += '\n' + summaryLines.join('\n') + '\n';
+    lines.push('');
+    lines.push('---');
+    lines.push('');
   }
 
-  fs.writeFileSync(BACKLOG_PATH, updatedContent, 'utf-8');
-  console.log('BACKLOG.md updated successfully');
-
-  // Log change summary
-  const newIssues = issues.filter(i => !existingIds.has(i.identifier));
-  const removedIds = [...existingIds].filter(id => !linearIds.has(id));
-
-  if (newIssues.length > 0) {
-    console.log(`New issues from Linear: ${newIssues.map(i => i.identifier).join(', ')}`);
-  }
-  if (removedIds.length > 0) {
-    console.log(`Items flagged [NOT IN LINEAR]: ${removedIds.join(', ')}`);
-  }
-  if (newIssues.length === 0 && removedIds.length === 0) {
-    console.log('No structural changes detected');
-  }
+  const newContent = lines.join('\n');
+  fs.writeFileSync(BACKLOG_PATH, newContent, 'utf-8');
+  console.log(`BACKLOG.md fully regenerated (${issues.length} issues across ${milestones.length} milestones)`);
 }
 
 main().catch(err => {
@@ -389,8 +436,8 @@ main().catch(err => {
 - `LINEAR_PROJECT_ID` — Project identifier. Find via Linear MCP or the project URL
 
 **Sync behavior:**
-- Linear is the **source of truth** — Linear state overwrites BACKLOG.md sync summary
-- Items in BACKLOG.md not found in Linear are flagged with `[NOT IN LINEAR]` for review
+- Linear is the **single source of truth** — BACKLOG.md is fully regenerated on every run
+- BACKLOG.md is read-only; never edit it directly
 - One-way sync avoids merge conflicts
 - Creates a PR for review rather than committing directly
 
@@ -440,3 +487,68 @@ In your GitHub repo: Settings → Branches → Add rule
   - Require status checks to pass
   - Require branches to be up to date
   - Restrict who can push (release managers only)
+
+---
+
+## docs-validate.yml — Docs PR Validation (Multi-User Safety)
+
+Triggers on PRs touching docs/, wiki/, or deliverables/ paths. Fails if any force-app/, config/, or .github/workflows/ files are also present in the same PR. Prevents non-technical team members from accidentally including code changes in documentation PRs.
+
+```yaml
+# .github/workflows/docs-validate.yml
+name: Validate Docs PR
+
+on:
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - 'docs/**'
+      - 'wiki/**'
+      - 'deliverables/**'
+
+jobs:
+  check-no-code-changes:
+    name: Verify No Accidental Code Changes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for accidental code changes
+        run: |
+          # Get list of changed files in this PR
+          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+
+          # Check if any force-app files were modified
+          CODE_CHANGES=$(echo "$CHANGED" | grep -E '^(force-app/|config/|scripts/|\.github/workflows/)' || true)
+
+          if [ -n "$CODE_CHANGES" ]; then
+            echo "::error::This PR includes code/config changes alongside documentation changes."
+            echo "::error::Please split into separate PRs:"
+            echo "::error::  1. A docs-only PR for wiki/docs/deliverables changes"
+            echo "::error::  2. A code PR for force-app/config changes"
+            echo ""
+            echo "Files that should be in a separate PR:"
+            echo "$CODE_CHANGES"
+            exit 1
+          fi
+
+          echo "✅ Docs-only PR verified. No code changes detected."
+
+  validate-markdown:
+    name: Validate Markdown Syntax
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check markdown syntax
+        uses: DavidAnson/markdownlint-cli2-action@v19
+        with:
+          globs: |
+            docs/**/*.md
+            wiki/**/*.md
+            deliverables/**/*.md
+```

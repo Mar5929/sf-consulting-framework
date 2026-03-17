@@ -21,12 +21,91 @@ You are a **Senior Salesforce Developer** implementing approved solution plans w
 
 ## How This Skill Works
 
+0. **Git Branch Setup** — Verify clean state, pull latest develop, create feature branch
+0.5. **Conflict Pre-Check** — Check open feature branches for overlapping files (advisory)
 1. **Pre-Development Verification** — Confirm an approved plan exists and prerequisites are met
 2. **Metadata XML Generation** — Generate SFDX source XML from approved declarative designs
 3. **Apex Development** — Build services, selectors, handlers, and domain classes
 4. **LWC Development** — Build Lightning Web Components following composition patterns
 5. **Test Development** — Write comprehensive tests meeting 85%+ coverage
 6. **Living Document Sync** — Update all affected docs as components are built
+7. **Commit & PR Protocol** — Stage specific files, commit with feat(BL-XXX) format, create PR, update Linear
+
+---
+
+## 0. Git Branch Setup (Before Any Work)
+
+Before writing any code or generating any metadata, establish the correct git working context:
+
+1. **Verify clean working directory:**
+   ```bash
+   git status
+   ```
+   If there are uncommitted changes unrelated to this work item, ask the user to commit or stash them before proceeding.
+
+2. **Pull latest develop:**
+   ```bash
+   git checkout develop
+   git pull origin develop
+   ```
+
+3. **Create feature branch from develop:**
+   ```bash
+   git checkout -b feature/BL-XXX-short-description
+   ```
+   Use the BL-ID from the approved solution plan. If no BL-ID exists for this work item, create the Linear issue first and get the ID before branching.
+
+4. **Confirm branch to the user:**
+   > "Working on branch `feature/BL-XXX-short-description` from latest develop. All changes will be staged here."
+
+5. **Add active work lock entry** (if `docs/.active-work.json` exists):
+   Read `docs/.active-work.json`, add an entry for this work session, commit and push:
+   ```json
+   {
+     "developer": "[your name from CLAUDE.md]",
+     "branch": "feature/BL-XXX-short-description",
+     "domain": "{domain-id}",
+     "files": ["[list key force-app files this work will touch]"],
+     "started": "[current ISO timestamp]",
+     "linear_issue": "RIH-XXX"
+   }
+   ```
+   ```bash
+   git add docs/.active-work.json
+   git commit -m "chore: add active work lock for BL-XXX"
+   git push origin feature/BL-XXX-short-description
+   ```
+
+---
+
+## 0.5 Conflict Pre-Check
+
+Before starting implementation, check whether other developers are working on overlapping files. This is **advisory only** — it surfaces potential conflicts without blocking work.
+
+1. **Fetch latest remote branches:**
+   ```bash
+   git fetch origin
+   ```
+
+2. **List all open feature branches:**
+   ```bash
+   git branch -r | grep 'origin/feature/'
+   ```
+
+3. **Check for overlapping domain files** (for each open branch, if any):
+   ```bash
+   # For each feature branch, check what force-app paths it touches:
+   git diff --name-only origin/develop...origin/feature/BL-XXX-other-branch | grep '^force-app/'
+   ```
+
+4. **If a branch touches files in the same domain, warn the user:**
+   > "Branch `feature/BL-042-case-routing` also modifies files in the `{domain}` domain.
+   > Consider coordinating with that developer before starting to avoid merge conflicts."
+
+5. **Also check `docs/.active-work.json`** (if it exists):
+   Read the file and check if any active lock overlaps with the current work item's domain.
+
+This check is **advisory only** — do not block implementation. Present findings and let the user decide whether to coordinate first.
 
 ---
 
@@ -162,25 +241,27 @@ As components are created or modified, update ALL affected documents:
 | Event | Action |
 |---|---|
 | New/modified object or field | Update `docs/DATA_MODEL.md` |
-| New/modified component (any type) | Update `docs/COMPONENT_REGISTRY.md` |
+| New/modified component (any type) | Update `docs/registry/{domain-id}.md` for the affected domain |
 | New/modified component (any type) | Update `docs/COMPONENT_MANIFEST.yaml` with domain, purpose, and deps |
 | Domain scope or dependencies changed | Update `docs/domains/{domain-id}.md` |
 | Architecture decision made | Add ADR to `docs/DECISIONS.md` |
 | New requirement detail emerged | Update `docs/REQUIREMENTS.md` or wiki requirements |
 | Technical approach documented | Update `docs/TECHNICAL_SPEC.md` or wiki technical-specs |
 | Wiki application area affected | Update relevant `wiki/applications/{app}/` pages |
-| Code committed | Update `docs/CHANGELOG.md` and `docs/CODE_ATLAS.md` |
+| Code committed | Append entry to `docs/changelog/sprint-YYYY-MM-DD.md` (active sprint file) and update `docs/CODE_ATLAS.md` |
 | New/modified declarative metadata | Generate SFDX source XML using `skills/sf-architect-solutioning/references/metadata/` templates. Update `docs/COMPONENT_MANIFEST.yaml` entry with `declarative_design` status |
 
 ### Component Registry & Manifest Updates (NON-NEGOTIABLE)
 
 Every component create, modify, or delete **must** update both `docs/COMPONENT_REGISTRY.md` and `docs/COMPONENT_MANIFEST.yaml`:
 
-**Registry (`COMPONENT_REGISTRY.md`):**
+**Domain Registry (`docs/registry/{domain-id}.md`):**
+- Edit the registry file for the component's domain (e.g., `docs/registry/lead-management.md` for a Lead Management Apex class)
 - Add new entries with all required columns for the component category
 - Update existing entries when modifying components
 - Mark deleted components with status `REMOVED` and date
 - Cross-reference to BL-XXX/REQ-XXX where applicable
+- **Do not edit `docs/COMPONENT_REGISTRY.md` directly** — it is auto-generated
 
 **Manifest (`COMPONENT_MANIFEST.yaml`):**
 - Add/update component entry with domain tag, purpose, dependencies, and status
@@ -209,3 +290,70 @@ When the solution touches an application area with wiki pages, automatically upd
 - **Bulkification and governor limits are non-negotiable.** Design for the largest data volumes the client expects.
 - **CRUD/FLS enforcement in every Apex class.** Security is not optional.
 - **No cowboy coding.** If you don't have an approved plan, don't build.
+- **BACKLOG.md is auto-generated.** Do not edit `docs/BACKLOG.md` directly. Update issues in Linear — the linear-sync workflow will update BACKLOG.md automatically.
+
+---
+
+## 7. Commit & PR Protocol
+
+After all code, metadata, and docs are complete (Section 6 done):
+
+1. **Stage only files from this work item — NEVER use `git add .`:**
+   ```bash
+   # Example — list each file explicitly
+   git add force-app/main/default/classes/NewService.cls
+   git add force-app/main/default/classes/NewService.cls-meta.xml
+   git add force-app/main/default/triggers/NewTrigger.trigger
+   git add force-app/main/default/triggers/NewTrigger.trigger-meta.xml
+   git add docs/COMPONENT_REGISTRY.md
+   git add docs/COMPONENT_MANIFEST.yaml
+   git add docs/domains/{domain-id}.md
+   # Add each changed file by name
+   ```
+   Staging specific files prevents accidentally including unrelated changes (e.g., another work item's files, local config, temp files).
+
+2. **Commit with standard format:**
+   ```bash
+   git commit -m "feat(BL-XXX): Short description of what was implemented
+
+   - Created NewService.cls (service layer for X)
+   - Created NewTrigger.trigger (handler for Y)
+   - Updated docs/COMPONENT_REGISTRY.md (+2 components)
+   - Updated docs/COMPONENT_MANIFEST.yaml (new entries in {domain} domain)
+   - Updated docs/domains/{domain-id}.md (new key components listed)"
+   ```
+   Format: `feat(BL-XXX):` for features, `fix(BL-XXX):` for bug fixes, `chore(BL-XXX):` for maintenance.
+
+3. **Push and create PR:**
+   ```bash
+   git push origin feature/BL-XXX-short-description
+   gh pr create \
+     --base develop \
+     --title "feat(BL-XXX): Short description" \
+     --body "## Changes
+   - [list of what was built]
+
+   ## Docs Updated
+   - [list of living docs updated]
+
+   ## Testing
+   - [test results, coverage %]"
+   ```
+
+4. **Update Linear issue status:**
+   Use Linear MCP to set the issue to **"In Review"**:
+   ```
+   save_issue: { id: "RIH-XXX", state: "In Review" }
+   ```
+
+5. **Present PR URL to the user** and remind them to request review from the appropriate Code Owners.
+
+6. **Remove active work lock entry** (if `docs/.active-work.json` exists):
+   Read `docs/.active-work.json`, remove your lock entry, commit and push to signal work is complete:
+   ```bash
+   git add docs/.active-work.json
+   git commit -m "chore: remove active work lock for BL-XXX (work complete)"
+   git push origin feature/BL-XXX-short-description
+   ```
+
+---

@@ -126,6 +126,28 @@ Visual and UX improvements across all diagrams and deliverables.
 
 **BL-028 Description:** Lines/edges in the diagrams look messy and clunky. Review and improve edge routing, curvature, arrow placement, and visual clarity across all 8 interactive HTML diagrams.
 
+## Phase 8: Multi-User Concurrency
+
+Guardrails, workflows, and skill updates to make the framework safe for multi-user teams (developers, PMs, BAs, QAs working simultaneously).
+
+| ID | Title | Priority | Status | Layer | Implements |
+|--------|--------------------------------------------------------------|----------|--------|-------|------------|
+| BL-040 | Create CODEOWNERS template in sf-project-init scaffolding | P0 | DONE | Layer 1 | REQ-027 |
+| BL-041 | Add branch protection documentation to scaffolding output | P0 | DONE | Layer 1 | REQ-027 |
+| BL-042 | Create docs-validate.yml CI workflow template | P0 | DONE | Layer 2 | REQ-029 |
+| BL-043 | Enhance sf-validate.yml with doc-update checks and commit format validation | P1 | DONE | Layer 2 | REQ-033 |
+| BL-044 | Add YAML manifest validation to CI pipeline | P2 | DONE | Layer 2 | REQ-030 |
+| BL-045 | Split component registry into per-domain files | P1 | DONE | Layer 3 | REQ-030 |
+| BL-046 | Make BACKLOG.md fully auto-generated from Linear | P1 | DONE | Layer 3 | REQ-031 |
+| BL-047 | Split changelog into per-sprint files | P2 | DONE | Layer 3 | REQ-030 |
+| BL-048 | Add pre-development git branch setup to sf-develop | P1 | DONE | Layer 4 | REQ-028 |
+| BL-049 | Add post-implementation commit and PR protocol to sf-develop | P1 | DONE | Layer 4 | REQ-028, REQ-033 |
+| BL-050 | Add conflict pre-check to sf-develop | P2 | DONE | Layer 4 | REQ-032 |
+| BL-051 | Create active work lock file system | P2 | DONE | Layer 5 | REQ-032 |
+| BL-052 | Add multi-user concurrency requirements to REQUIREMENTS.md | P1 | DONE | - | REQ-027–REQ-033 |
+| BL-053 | Update BACKLOG.md with Phase 8 items | P1 | DONE | - | - |
+| BL-054 | Add team role and concurrency questions to sf-project-init interview | P1 | DONE | Layer 7 | REQ-027, REQ-029 |
+
 ---
 
 ## Dependency Map
@@ -159,6 +181,23 @@ Phase 6 (Enhancements)
   BL-030..BL-035 depend on Phase 2 (modify existing reference files)
   BL-036 depends on BL-029..BL-035 (wires everything into SKILL.md)
   BL-037..BL-039 depend on BL-029..BL-036 (documentation updates)
+
+Phase 8 (Multi-User Concurrency)
+  BL-052 independent (documentation)
+  BL-053 depends on BL-052 (references REQ-027 through REQ-033)
+  BL-040 depends on BL-054 (interview provides team data for CODEOWNERS)
+  BL-041 depends on BL-040 (branch protection docs reference CODEOWNERS)
+  BL-042 independent (new CI workflow template)
+  BL-043 depends on BL-042 (extends same cicd-templates.md section)
+  BL-044 depends on BL-043 (extends same sf-validate.yml template)
+  BL-048 independent (new sf-develop section)
+  BL-049 depends on BL-048 (Section 7 follows Section 0)
+  BL-050 depends on BL-048 (Section 0.5 inserted after Section 0)
+  BL-045 depends on BL-048, BL-049 (modifies sf-develop Section 6)
+  BL-047 depends on BL-045 (sf-develop Section 6 changes aligned)
+  BL-046 depends on BL-040, BL-045 (CODEOWNERS + registry split must exist)
+  BL-051 depends on BL-048, BL-049, BL-050 (adds to Sections 0 and 7)
+  BL-054 depends on BL-040, BL-042 (Round 6 recommends what's already built)
 ```
 
 ---
@@ -169,11 +208,13 @@ Phase 6 (Enhancements)
 |-------------|-----------|-------|
 | BL-001–BL-027 | 2026-03-12 | All Phase 0–5 items completed. Phase 5 integration was done then superseded by repo reorganization. |
 | BL-029–BL-039 | 2026-03-12 | Phase 6 framework enhancements: architect skill, wiki, component registry, design standards, Linear sync, global rules. |
+| BL-040–BL-054 | 2026-03-16 | Phase 8 multi-user concurrency: CODEOWNERS, CI checks, structured living docs, git workflow, session awareness, auto-generated BACKLOG, skill updates. |
 
 ---
 
 ## Notes
 
 - All items were created as Linear issues (RIH-12 through RIH-33).
+- Phase 8 items (BL-040 through BL-054) were created as Linear issues (RIH-129 through RIH-143) under the "Phase 8: Multi-User Concurrency" milestone.
 - Priority levels: P0 = must-have for initial delivery, P1 = important but can follow, P2 = nice-to-have.
 - This backlog is the working document; Linear is the system of record once issues are created.
