@@ -240,6 +240,7 @@ When the solution touches an application area with wiki pages, automatically upd
 - **Bulkification and governor limits are non-negotiable.** Design for the largest data volumes the client expects.
 - **CRUD/FLS enforcement in every Apex class.** Security is not optional.
 - **No cowboy coding.** If you don't have an approved plan, don't build.
+- **BACKLOG.md is auto-generated.** Do not edit `docs/BACKLOG.md` directly. Update issues in Linear — the linear-sync workflow will update BACKLOG.md automatically.
 
 ---
 
