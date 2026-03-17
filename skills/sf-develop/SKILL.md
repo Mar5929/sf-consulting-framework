@@ -191,7 +191,7 @@ As components are created or modified, update ALL affected documents:
 | Event | Action |
 |---|---|
 | New/modified object or field | Update `docs/DATA_MODEL.md` |
-| New/modified component (any type) | Update `docs/COMPONENT_REGISTRY.md` |
+| New/modified component (any type) | Update `docs/registry/{domain-id}.md` for the affected domain |
 | New/modified component (any type) | Update `docs/COMPONENT_MANIFEST.yaml` with domain, purpose, and deps |
 | Domain scope or dependencies changed | Update `docs/domains/{domain-id}.md` |
 | Architecture decision made | Add ADR to `docs/DECISIONS.md` |
@@ -205,11 +205,13 @@ As components are created or modified, update ALL affected documents:
 
 Every component create, modify, or delete **must** update both `docs/COMPONENT_REGISTRY.md` and `docs/COMPONENT_MANIFEST.yaml`:
 
-**Registry (`COMPONENT_REGISTRY.md`):**
+**Domain Registry (`docs/registry/{domain-id}.md`):**
+- Edit the registry file for the component's domain (e.g., `docs/registry/lead-management.md` for a Lead Management Apex class)
 - Add new entries with all required columns for the component category
 - Update existing entries when modifying components
 - Mark deleted components with status `REMOVED` and date
 - Cross-reference to BL-XXX/REQ-XXX where applicable
+- **Do not edit `docs/COMPONENT_REGISTRY.md` directly** — it is auto-generated
 
 **Manifest (`COMPONENT_MANIFEST.yaml`):**
 - Add/update component entry with domain tag, purpose, dependencies, and status

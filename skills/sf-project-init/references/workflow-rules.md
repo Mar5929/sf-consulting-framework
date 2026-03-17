@@ -190,6 +190,7 @@ Apply to every engagement (NON-OPTIONAL).
 4. **Cross-references.** Link registry entries to BL-XXX (backlog items) and REQ-XXX (requirements) where applicable.
 5. **Status tracking.** Use status values: Active, Draft, Deprecated, Removed. When removing a component, mark it as `REMOVED` with the date rather than deleting the row.
 6. **Type classification.** Apex classes must be classified by type (Service, Utility, Test, Handler, Selector, Domain, Controller, Batch, Schedulable, Invocable). Flows must be classified (Record-Triggered, Screen, Scheduled, Autolaunched, Platform Event-Triggered).
+7. **Per-domain registry files.** When the engagement uses the per-domain registry split (recommended for teams > 1), updates go to `docs/registry/{domain-id}.md` rather than directly to `docs/COMPONENT_REGISTRY.md`. The top-level `docs/COMPONENT_REGISTRY.md` is an auto-generated summary — do not edit it directly. Use the domain file for the affected domain (e.g., `docs/registry/lead-management.md` for lead management components).
 
 ---
 
@@ -207,7 +208,7 @@ Apply to every engagement (NON-OPTIONAL).
 These constraints apply to every engagement, regardless of entry point or configuration.
 
 1. **Living Document Sync (Rule 14).** All living documents must be kept in sync. When modifying code, update all affected documents (REQUIREMENTS, BACKLOG, TECHNICAL_SPEC, wiki pages, COMPONENT_REGISTRY, CODE_ATLAS, DATA_MODEL). Never leave a document stale.
-2. **Component Registry & Manifest (Rule 15).** Every component create/modify/delete must update both `docs/COMPONENT_REGISTRY.md` and `docs/COMPONENT_MANIFEST.yaml` immediately. Update `docs/domains/{domain-id}.md` if domain scope or dependencies change. This is non-negotiable.
+2. **Component Registry & Manifest (Rule 15).** Every component create/modify/delete must update the component registry and `docs/COMPONENT_MANIFEST.yaml` immediately. If using per-domain registry files (recommended), update `docs/registry/{domain-id}.md` for the affected domain. If using the monolithic registry, update `docs/COMPONENT_REGISTRY.md`. Update `docs/domains/{domain-id}.md` if domain scope or dependencies change. This is non-negotiable.
 3. **UI Testing (Rule 16).** Before starting UI work (LWC, FlexCard, Experience Cloud page), ask the user: "This involves UI work. Should I use the Playwright screenshot loop?" If yes, follow the build → screenshot → review → iterate loop.
 4. **Pre-implementation documentation.** Before writing code for a new feature, ensure the BRD/requirements, technical spec, and data model are documented. Use the sf-architect-solutioning skill's pre-implementation gate.
 5. **Architecture-first.** Complex features must go through the sf-architect-solutioning skill before implementation. Simple bug fixes and minor enhancements can proceed directly with document updates.

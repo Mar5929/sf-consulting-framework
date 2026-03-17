@@ -414,8 +414,10 @@ project-root/
 │   ├── CHANGELOG.md
 │   ├── DATA_MODEL.md
 │   ├── CODE_ATLAS.md
-│   ├── COMPONENT_REGISTRY.md          # NON-OPTIONAL — human-readable component inventory
+│   ├── COMPONENT_REGISTRY.md          # NON-OPTIONAL — auto-generated summary (do not edit directly)
 │   ├── COMPONENT_MANIFEST.yaml        # NON-OPTIONAL — machine-readable domain-tagged index
+│   ├── registry/                      # Per-domain registry files (hand-maintained by developers)
+│   │   └── {domain-id}.md             # One per domain — edit these, not COMPONENT_REGISTRY.md
 │   └── domains/                       # Per-domain context files for lazy-loading retrieval
 │       └── {domain-id}.md             # One per business domain (50-100 lines each)
 │
@@ -498,10 +500,15 @@ Populate the `wiki/` directory based on interview answers:
 
 ### Component Registry Generation
 
-Generate `docs/COMPONENT_REGISTRY.md` with:
+Generate `docs/COMPONENT_REGISTRY.md` as an auto-generated summary file:
 - Summary table with all categories at count 0
-- All category section headers with empty tables
+- Header comment: `<!-- AUTO-GENERATED — Do not edit directly. Update docs/registry/{domain-id}.md files instead. -->`
 - This is **NON-OPTIONAL** — always generated regardless of user selections
+
+Generate `docs/registry/` directory with one starter file per domain identified in the interview (same domains used for `docs/domains/`):
+- Create `docs/registry/{domain-id}.md` for each domain using the template from `references/document-templates.md`
+- Populate domain name and ID from interview answers
+- Leave component tables empty — populated during development
 
 ### Component Manifest Generation
 

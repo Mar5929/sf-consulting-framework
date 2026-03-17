@@ -1082,3 +1082,79 @@ Template for `.github/CODEOWNERS`. Generated during Phase 3 scaffolding, populat
 - Replace `@qa-team` with QA GitHub usernames
 - If a role has no team members, remove that line
 - If the engagement is single-developer, set all paths to that developer's username
+
+---
+
+## Registry Domain File Template
+
+Template for `docs/registry/{domain-id}.md`. One file per business domain. Hand-maintained by developers working in that domain. These files are the editable source; `docs/COMPONENT_REGISTRY.md` is an auto-generated summary.
+
+```markdown
+# {Domain Name} — Component Registry
+
+**Domain ID:** `{domain-id}`
+**Domain Owner:** {team or developer}
+**Last Updated:** {date}
+
+> This file is the authoritative registry for all Salesforce components in the `{domain-id}` domain.
+> Update it whenever you create, modify, or delete a component in this domain.
+> **Do not edit `docs/COMPONENT_REGISTRY.md` directly — it is auto-generated.**
+
+---
+
+## Custom Objects
+
+| Component | API Name | Description | BL-ID | Status |
+|-----------|----------|-------------|-------|--------|
+| _(none yet)_ | | | | |
+
+## Custom Fields
+
+| Object | Field Label | API Name | Type | Description | BL-ID | Status |
+|--------|-------------|----------|------|-------------|-------|--------|
+| _(none yet)_ | | | | | | |
+
+## Apex Classes
+
+| Class Name | Type | Description | BL-ID | Status |
+|------------|------|-------------|-------|--------|
+| _(none yet)_ | | | | |
+
+## Apex Triggers
+
+| Trigger Name | Object | Events | Description | BL-ID | Status |
+|--------------|--------|--------|-------------|-------|--------|
+| _(none yet)_ | | | | | |
+
+## Flows
+
+| Flow Name | Type | Description | BL-ID | Status |
+|-----------|------|-------------|-------|--------|
+| _(none yet)_ | | | | |
+
+## Lightning Web Components
+
+| Component Name | Description | BL-ID | Status |
+|----------------|-------------|-------|--------|
+| _(none yet)_ | | | |
+
+## Permission Sets
+
+| Permission Set | Description | BL-ID | Status |
+|----------------|-------------|-------|--------|
+| _(none yet)_ | | | |
+
+## Other Components
+
+| Type | Component Name | Description | BL-ID | Status |
+|------|----------------|-------------|-------|--------|
+| _(none yet)_ | | | | |
+
+---
+
+## Recent Changes
+
+| Date | BL-ID | Change |
+|------|-------|--------|
+| {date} | BL-XXX | Initial domain registry created |
+```
