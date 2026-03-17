@@ -22,6 +22,7 @@ You are a **Senior Salesforce Developer** implementing approved solution plans w
 ## How This Skill Works
 
 0. **Git Branch Setup** — Verify clean state, pull latest develop, create feature branch
+0.5. **Conflict Pre-Check** — Check open feature branches for overlapping files (advisory)
 1. **Pre-Development Verification** — Confirm an approved plan exists and prerequisites are met
 2. **Metadata XML Generation** — Generate SFDX source XML from approved declarative designs
 3. **Apex Development** — Build services, selectors, handlers, and domain classes
@@ -56,6 +57,37 @@ Before writing any code or generating any metadata, establish the correct git wo
 
 4. **Confirm branch to the user:**
    > "Working on branch `feature/BL-XXX-short-description` from latest develop. All changes will be staged here."
+
+---
+
+## 0.5 Conflict Pre-Check
+
+Before starting implementation, check whether other developers are working on overlapping files. This is **advisory only** — it surfaces potential conflicts without blocking work.
+
+1. **Fetch latest remote branches:**
+   ```bash
+   git fetch origin
+   ```
+
+2. **List all open feature branches:**
+   ```bash
+   git branch -r | grep 'origin/feature/'
+   ```
+
+3. **Check for overlapping domain files** (for each open branch, if any):
+   ```bash
+   # For each feature branch, check what force-app paths it touches:
+   git diff --name-only origin/develop...origin/feature/BL-XXX-other-branch | grep '^force-app/'
+   ```
+
+4. **If a branch touches files in the same domain, warn the user:**
+   > "Branch `feature/BL-042-case-routing` also modifies files in the `{domain}` domain.
+   > Consider coordinating with that developer before starting to avoid merge conflicts."
+
+5. **Also check `docs/.active-work.json`** (if it exists):
+   Read the file and check if any active lock overlaps with the current work item's domain.
+
+This check is **advisory only** — do not block implementation. Present findings and let the user decide whether to coordinate first.
 
 ---
 
