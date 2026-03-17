@@ -132,21 +132,21 @@ Guardrails, workflows, and skill updates to make the framework safe for multi-us
 
 | ID | Title | Priority | Status | Layer | Implements |
 |--------|--------------------------------------------------------------|----------|--------|-------|------------|
-| BL-040 | Create CODEOWNERS template in sf-project-init scaffolding | P0 | NOT STARTED | Layer 1 | REQ-027 |
-| BL-041 | Add branch protection documentation to scaffolding output | P0 | NOT STARTED | Layer 1 | REQ-027 |
-| BL-042 | Create docs-validate.yml CI workflow template | P0 | NOT STARTED | Layer 2 | REQ-029 |
-| BL-043 | Enhance sf-validate.yml with doc-update checks and commit format validation | P1 | NOT STARTED | Layer 2 | REQ-033 |
-| BL-044 | Add YAML manifest validation to CI pipeline | P2 | NOT STARTED | Layer 2 | REQ-030 |
-| BL-045 | Split component registry into per-domain files | P1 | NOT STARTED | Layer 3 | REQ-030 |
-| BL-046 | Make BACKLOG.md fully auto-generated from Linear | P1 | NOT STARTED | Layer 3 | REQ-031 |
-| BL-047 | Split changelog into per-sprint files | P2 | NOT STARTED | Layer 3 | REQ-030 |
-| BL-048 | Add pre-development git branch setup to sf-develop | P1 | NOT STARTED | Layer 4 | REQ-028 |
-| BL-049 | Add post-implementation commit and PR protocol to sf-develop | P1 | NOT STARTED | Layer 4 | REQ-028, REQ-033 |
-| BL-050 | Add conflict pre-check to sf-develop | P2 | NOT STARTED | Layer 4 | REQ-032 |
-| BL-051 | Create active work lock file system | P2 | NOT STARTED | Layer 5 | REQ-032 |
+| BL-040 | Create CODEOWNERS template in sf-project-init scaffolding | P0 | DONE | Layer 1 | REQ-027 |
+| BL-041 | Add branch protection documentation to scaffolding output | P0 | DONE | Layer 1 | REQ-027 |
+| BL-042 | Create docs-validate.yml CI workflow template | P0 | DONE | Layer 2 | REQ-029 |
+| BL-043 | Enhance sf-validate.yml with doc-update checks and commit format validation | P1 | DONE | Layer 2 | REQ-033 |
+| BL-044 | Add YAML manifest validation to CI pipeline | P2 | DONE | Layer 2 | REQ-030 |
+| BL-045 | Split component registry into per-domain files | P1 | DONE | Layer 3 | REQ-030 |
+| BL-046 | Make BACKLOG.md fully auto-generated from Linear | P1 | DONE | Layer 3 | REQ-031 |
+| BL-047 | Split changelog into per-sprint files | P2 | DONE | Layer 3 | REQ-030 |
+| BL-048 | Add pre-development git branch setup to sf-develop | P1 | DONE | Layer 4 | REQ-028 |
+| BL-049 | Add post-implementation commit and PR protocol to sf-develop | P1 | DONE | Layer 4 | REQ-028, REQ-033 |
+| BL-050 | Add conflict pre-check to sf-develop | P2 | DONE | Layer 4 | REQ-032 |
+| BL-051 | Create active work lock file system | P2 | DONE | Layer 5 | REQ-032 |
 | BL-052 | Add multi-user concurrency requirements to REQUIREMENTS.md | P1 | DONE | - | REQ-027–REQ-033 |
-| BL-053 | Update BACKLOG.md with Phase 8 items | P1 | IN PROGRESS | - | - |
-| BL-054 | Add team role and concurrency questions to sf-project-init interview | P1 | NOT STARTED | Layer 7 | REQ-027, REQ-029 |
+| BL-053 | Update BACKLOG.md with Phase 8 items | P1 | DONE | - | - |
+| BL-054 | Add team role and concurrency questions to sf-project-init interview | P1 | DONE | Layer 7 | REQ-027, REQ-029 |
 
 ---
 
@@ -208,6 +208,7 @@ Phase 8 (Multi-User Concurrency)
 |-------------|-----------|-------|
 | BL-001–BL-027 | 2026-03-12 | All Phase 0–5 items completed. Phase 5 integration was done then superseded by repo reorganization. |
 | BL-029–BL-039 | 2026-03-12 | Phase 6 framework enhancements: architect skill, wiki, component registry, design standards, Linear sync, global rules. |
+| BL-040–BL-054 | 2026-03-16 | Phase 8 multi-user concurrency: CODEOWNERS, CI checks, structured living docs, git workflow, session awareness, auto-generated BACKLOG, skill updates. |
 
 ---
 

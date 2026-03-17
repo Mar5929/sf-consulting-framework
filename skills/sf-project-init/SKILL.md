@@ -169,7 +169,7 @@ Read `references/document-templates.md` for template structures.
 - **Apex code standards** — accept the 16 Golden Rules as defaults? (see below)
 - **Multi-user safety setup** — For teams with multiple contributors:
   - Should we set up **CODEOWNERS** to enforce path-based review requirements? (Recommended if team > 1; prevents wrong-role changes from merging without approval)
-  - Should we set up a **docs-only validation workflow** (`docs-validate.yml`) to prevent accidental code changes in documentation PRs? (Recommended if any non-technical members use the repo directly)
+  - The `docs-validate.yml` CI workflow will be set up automatically. Should it be configured in **enforcement mode** (blocks merges if non-technical PRs touch code files) or **advisory mode** (warns only)? Enforcement mode is recommended if PMs/BAs/QAs will submit PRs directly. Advisory mode is safer to start with.
   - *(If team > 3)* Recommend: **per-domain component registry split** (`docs/registry/{domain}.md`) to eliminate merge conflicts between developers working on different domains simultaneously. Enable this?
 
 ### Round 7 — Security & Compliance
