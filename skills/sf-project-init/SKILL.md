@@ -392,6 +392,7 @@ If the user has no client-specific conventions, omit this section entirely — W
 Read `references/cicd-templates.md` and generate:
 - `.github/workflows/sf-validate.yml`
 - `.github/workflows/sf-deploy.yml`
+- `.github/workflows/docs-validate.yml` — always generated; protects docs PRs from accidental code changes
 
 ### Directory Structure
 
@@ -474,6 +475,7 @@ project-root/
     └── workflows/
         ├── sf-validate.yml
         ├── sf-deploy.yml
+        ├── docs-validate.yml          # Docs-only PR guard (multi-user safety)
         └── linear-sync.yml            # If Linear sync opted in
 ```
 

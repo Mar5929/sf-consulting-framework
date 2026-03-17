@@ -440,3 +440,68 @@ In your GitHub repo: Settings → Branches → Add rule
   - Require status checks to pass
   - Require branches to be up to date
   - Restrict who can push (release managers only)
+
+---
+
+## docs-validate.yml — Docs PR Validation (Multi-User Safety)
+
+Triggers on PRs touching docs/, wiki/, or deliverables/ paths. Fails if any force-app/, config/, or .github/workflows/ files are also present in the same PR. Prevents non-technical team members from accidentally including code changes in documentation PRs.
+
+```yaml
+# .github/workflows/docs-validate.yml
+name: Validate Docs PR
+
+on:
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - 'docs/**'
+      - 'wiki/**'
+      - 'deliverables/**'
+
+jobs:
+  check-no-code-changes:
+    name: Verify No Accidental Code Changes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for accidental code changes
+        run: |
+          # Get list of changed files in this PR
+          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+
+          # Check if any force-app files were modified
+          CODE_CHANGES=$(echo "$CHANGED" | grep -E '^(force-app/|config/|scripts/|\.github/workflows/)' || true)
+
+          if [ -n "$CODE_CHANGES" ]; then
+            echo "::error::This PR includes code/config changes alongside documentation changes."
+            echo "::error::Please split into separate PRs:"
+            echo "::error::  1. A docs-only PR for wiki/docs/deliverables changes"
+            echo "::error::  2. A code PR for force-app/config changes"
+            echo ""
+            echo "Files that should be in a separate PR:"
+            echo "$CODE_CHANGES"
+            exit 1
+          fi
+
+          echo "✅ Docs-only PR verified. No code changes detected."
+
+  validate-markdown:
+    name: Validate Markdown Syntax
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check markdown syntax
+        uses: DavidAnson/markdownlint-cli2-action@v19
+        with:
+          globs: |
+            docs/**/*.md
+            wiki/**/*.md
+            deliverables/**/*.md
+```
