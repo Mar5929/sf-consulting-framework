@@ -198,7 +198,7 @@ As components are created or modified, update ALL affected documents:
 | New requirement detail emerged | Update `docs/REQUIREMENTS.md` or wiki requirements |
 | Technical approach documented | Update `docs/TECHNICAL_SPEC.md` or wiki technical-specs |
 | Wiki application area affected | Update relevant `wiki/applications/{app}/` pages |
-| Code committed | Update `docs/CHANGELOG.md` and `docs/CODE_ATLAS.md` |
+| Code committed | Append entry to `docs/changelog/sprint-YYYY-MM-DD.md` (active sprint file) and update `docs/CODE_ATLAS.md` |
 | New/modified declarative metadata | Generate SFDX source XML using `skills/sf-architect-solutioning/references/metadata/` templates. Update `docs/COMPONENT_MANIFEST.yaml` entry with `declarative_design` status |
 
 ### Component Registry & Manifest Updates (NON-NEGOTIABLE)

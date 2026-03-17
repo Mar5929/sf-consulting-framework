@@ -411,7 +411,9 @@ project-root/
 │   ├── REQUIREMENTS.md
 │   ├── TECHNICAL_SPEC.md
 │   ├── DECISIONS.md
-│   ├── CHANGELOG.md
+│   ├── CHANGELOG.md                   # Auto-generated rollup (do not edit directly)
+│   ├── changelog/                     # Per-sprint changelog files (hand-maintained)
+│   │   └── sprint-YYYY-MM-DD.md       # One per sprint — edit these, not CHANGELOG.md
 │   ├── DATA_MODEL.md
 │   ├── CODE_ATLAS.md
 │   ├── COMPONENT_REGISTRY.md          # NON-OPTIONAL — auto-generated summary (do not edit directly)
@@ -518,6 +520,13 @@ Generate `docs/COMPONENT_MANIFEST.yaml` with:
 - Empty `components:` list — populated during development
 - Read `references/document-templates.md` for the full YAML schema
 - This is **NON-OPTIONAL** — always generated regardless of user selections
+
+### Sprint Changelog Generation
+
+Generate the `docs/changelog/` directory:
+- Create `docs/changelog/sprint-{project-start-date}.md` using the sprint changelog template from `references/document-templates.md`
+- The sprint start date is derived from the engagement start date captured in the interview
+- Add a header comment to `docs/CHANGELOG.md`: `<!-- AUTO-GENERATED — Do not edit directly. Update docs/changelog/sprint-YYYY-MM-DD.md files instead. -->`
 
 ### Domain Context Files Generation
 

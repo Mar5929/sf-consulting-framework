@@ -1158,3 +1158,51 @@ Template for `docs/registry/{domain-id}.md`. One file per business domain. Hand-
 |------|-------|--------|
 | {date} | BL-XXX | Initial domain registry created |
 ```
+
+---
+
+## Sprint Changelog Template
+
+Template for `docs/changelog/sprint-YYYY-MM-DD.md`. One file per sprint, named by sprint start date. Developers append to the current sprint's file during development. `docs/CHANGELOG.md` is an auto-generated rollup — do not edit it directly.
+
+```markdown
+<!-- Sprint changelog for sprint starting {YYYY-MM-DD} -->
+<!-- CHANGELOG.md is auto-generated from sprint files — edit this file, not CHANGELOG.md -->
+
+# Sprint {YYYY-MM-DD} Changelog
+
+**Sprint start:** {YYYY-MM-DD}
+**Sprint end:** {YYYY-MM-DD (2 weeks later)}
+
+---
+
+## Added
+
+<!-- New features and components created this sprint -->
+- _(none yet)_
+
+## Changed
+
+<!-- Modifications to existing components -->
+- _(none yet)_
+
+## Fixed
+
+<!-- Bug fixes -->
+- _(none yet)_
+
+## Docs Updated
+
+<!-- Living document updates -->
+- _(none yet)_
+
+---
+```
+
+**File naming:** Use the sprint start date: `docs/changelog/sprint-2026-03-17.md`
+
+**Update protocol:** During development, append entries under the relevant section:
+```
+## Added
+- `feat(BL-XXX)`: Created AccountService.cls — centralized account management service
+```
