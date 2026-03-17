@@ -470,6 +470,7 @@ project-root/
 │   └── linear-sync.js                 # If Linear sync opted in
 │
 └── .github/
+    ├── CODEOWNERS                     # Path-based review ownership
     └── workflows/
         ├── sf-validate.yml
         ├── sf-deploy.yml
@@ -518,6 +519,15 @@ Generate `docs/domains/{domain-id}.md` stub files:
 - Leave Key Objects, Key Automation, Key UI sections as placeholders — populated during development
 - If client metadata conventions (captured in Round 8 `## Client Metadata Conventions`) apply to specific domains, note which domains have client-specific conventions that override Well-Architected defaults
 
+### CODEOWNERS Generation
+
+Generate `.github/CODEOWNERS` using the template from `references/document-templates.md`:
+- Replace `@dev-team` with developer GitHub usernames from Round 1
+- Replace `@tech-lead` with the tech lead's GitHub username from Round 1
+- Replace `@pm-team`, `@ba-team`, `@qa-team` with respective role handles from Round 1
+- If a role has no team members, remove the corresponding lines
+- If single-developer engagement: set all paths to that developer's username
+
 ### Linear Sync Generation
 
 If the user opted in to daily Linear sync in Round 5:
@@ -562,12 +572,17 @@ git push origin main
 git checkout develop             # Return to develop as default
 ```
 
-### Step 4 — Configure branch protection (optional, recommended)
+### Step 4 — Configure branch protection and CODEOWNERS (optional, recommended)
 
-Remind the user to set branch protection rules in GitHub Settings → Branches after the repo is created:
+Remind the user to configure the following in GitHub Settings → Branches:
 
-- `develop` branch: require PR review (1 reviewer), require status checks (sf-validate workflow)
-- `main` branch: require PR review (2 reviewers), require status checks, restrict pushers to release managers
+**CODEOWNERS activation:**
+- CODEOWNERS is already generated at `.github/CODEOWNERS`
+- To activate it: enable "Require review from Code Owners" in branch protection rules
+
+**Branch protection rules:**
+- `develop` branch: require PR review (1 reviewer), require CODEOWNERS review, require status checks (sf-validate workflow), require branches to be up to date before merging
+- `main` branch: require PR review (2 reviewers), require CODEOWNERS review, require status checks, restrict pushers to release managers
 
 > **Note:** Branch protection can be configured via `gh api` if the user wants it automated. Ask if they'd like that.
 

@@ -952,3 +952,64 @@ Structure for `deliverables/test-plans/`:
 6. Regression Test Suite
 7. Performance Test Criteria
 8. Defect Management Process
+
+---
+
+## CODEOWNERS Template
+
+Template for `.github/CODEOWNERS`. Generated during Phase 3 scaffolding, populated with GitHub handles from interview Round 1 team data.
+
+```
+# .github/CODEOWNERS
+#
+# Each line maps a path pattern to the GitHub users/teams who must approve PRs
+# touching those paths. The LAST matching pattern takes precedence.
+#
+# Format: <path-pattern>  <owner1> <owner2> ...
+# Replace @placeholder values with actual GitHub usernames or team handles.
+#
+# Activate by enabling "Require review from Code Owners" in GitHub
+# Settings → Branches → Branch protection rules.
+
+# ── Salesforce Source (Developers Only) ─────────────────────────
+/force-app/                     @dev-team
+/config/                        @dev-team
+/.github/workflows/             @dev-team @tech-lead
+
+# ── Living Docs (Developers own, others can propose) ────────────
+/docs/COMPONENT_REGISTRY.md     @dev-team
+/docs/COMPONENT_MANIFEST.yaml   @dev-team
+/docs/CODE_ATLAS.md             @dev-team
+/docs/TECHNICAL_SPEC.md         @dev-team @tech-lead
+/docs/DATA_MODEL.md             @dev-team @tech-lead
+
+# ── Requirements & Backlog (PM/BA own) ──────────────────────────
+/docs/BACKLOG.md                @github-actions[bot]
+/docs/REQUIREMENTS.md           @pm-team @ba-team
+/docs/DECISIONS.md              @tech-lead
+
+# ── Wiki (Shared, reviewed by PM/BA/Tech Lead) ──────────────────
+/wiki/                          @pm-team @ba-team @tech-lead
+
+# ── Deliverables (Role-based) ───────────────────────────────────
+/deliverables/brd/              @ba-team
+/deliverables/sdd/              @tech-lead @dev-team
+/deliverables/test-plans/       @qa-team
+/deliverables/data-migration/   @dev-team
+/deliverables/architecture/     @tech-lead
+/deliverables/presentations/    @pm-team
+/deliverables/training/         @pm-team @ba-team
+
+# ── Project Config (Tech Lead only) ─────────────────────────────
+/CLAUDE.md                      @tech-lead
+/sfdx-project.json              @tech-lead
+```
+
+**Population rules:**
+- Replace `@dev-team` with actual developer GitHub usernames from Round 1 (space-separated)
+- Replace `@tech-lead` with the tech lead's GitHub username
+- Replace `@pm-team` with PM GitHub usernames
+- Replace `@ba-team` with BA GitHub usernames
+- Replace `@qa-team` with QA GitHub usernames
+- If a role has no team members, remove that line
+- If the engagement is single-developer, set all paths to that developer's username
