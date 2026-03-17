@@ -115,7 +115,39 @@ jobs:
           fi
 ```
 
-> **Note:** Both jobs use `::warning::` (not `::error::`) — they surface issues without blocking deployment.
+> **Note:** Both `check-docs-updated` and `check-commit-format` use `::warning::` (not `::error::`) — they surface issues without blocking deployment.
+
+```yaml
+  validate-manifest:
+    name: Validate COMPONENT_MANIFEST.yaml Structure
+    runs-on: ubuntu-latest
+    if: contains(join(github.event.pull_request.changed_files.*.filename, ','), 'COMPONENT_MANIFEST')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate YAML structure
+        run: |
+          pip install pyyaml --break-system-packages
+          python3 -c "
+          import yaml, sys
+          try:
+              with open('docs/COMPONENT_MANIFEST.yaml') as f:
+                  data = yaml.safe_load(f)
+              assert 'version' in data, 'Missing required field: version'
+              assert 'domains' in data, 'Missing required field: domains'
+              assert 'components' in data, 'Missing required field: components'
+              print('✅ COMPONENT_MANIFEST.yaml is valid YAML with required structure.')
+          except AssertionError as e:
+              print(f'::error::COMPONENT_MANIFEST.yaml validation failed: {e}')
+              sys.exit(1)
+          except yaml.YAMLError as e:
+              print(f'::error::COMPONENT_MANIFEST.yaml is not valid YAML: {e}')
+              sys.exit(1)
+          "
+```
+
+> **Note:** `validate-manifest` uses `::error::` and fails the check — a corrupt manifest is a hard blocker.
 
 ---
 
