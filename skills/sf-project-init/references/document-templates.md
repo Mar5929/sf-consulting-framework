@@ -487,6 +487,31 @@ Templates for the project wiki structure generated during scaffolding.
 - [ ] BACKLOG.md and CHANGELOG.md updated
 - [ ] Component registry current
 - [ ] No hardcoded IDs or credentials
+
+## Branch Protection Configuration
+
+Branch protection is configured in GitHub Settings → Branches.
+
+### `develop` branch rules
+| Rule | Setting |
+|------|---------|
+| Require PR before merging | ✅ Enabled |
+| Required approvals | 1 reviewer |
+| Require Code Owners review | ✅ Enabled (activates CODEOWNERS) |
+| Require status checks | sf-validate |
+| Require up-to-date branches | ✅ Enabled |
+
+### `main` branch rules
+| Rule | Setting |
+|------|---------|
+| Require PR before merging | ✅ Enabled |
+| Required approvals | 2 reviewers |
+| Require Code Owners review | ✅ Enabled |
+| Require status checks | sf-validate |
+| Restrict pushers | Release managers only |
+
+### CODEOWNERS
+See `.github/CODEOWNERS` for path-to-reviewer mappings. Update handles as team composition changes.
 ```
 
 ### wiki/ways-of-working/sandbox-strategy.md
@@ -766,10 +791,54 @@ Standard project README with:
 
 ## GETTING_STARTED.md
 
-Bootstrap prompt for Claude:
-- Read CLAUDE.md → CODE_ATLAS.md → BACKLOG.md
-- Summary of engagement context
-- Current phase and priority items
+Template for `GETTING_STARTED.md` in the project root. Covers onboarding steps for new team members.
+
+```markdown
+# Getting Started
+
+## Prerequisites
+- [ ] GitHub account added to the project repository
+- [ ] Salesforce sandbox access provisioned
+- [ ] VS Code with Salesforce Extension Pack installed
+- [ ] SFDX CLI installed (`npm install -g @salesforce/cli`)
+- [ ] Claude Code installed and configured
+
+## Clone and Setup
+```bash
+git clone [repo-url]
+cd [project-name]
+git checkout develop
+```
+
+## Authenticate to Salesforce
+```bash
+sf org login web --alias [your-alias] --instance-url [org-url]
+```
+
+## Branch Protection Setup
+
+This project uses GitHub branch protection on `develop` and `main`. Configure after repo creation:
+
+**GitHub Settings → Branches → Add branch protection rule:**
+
+### `develop` branch
+- ✅ Require a pull request before merging
+- ✅ Require approvals: **1 reviewer minimum**
+- ✅ Require review from Code Owners (activates `.github/CODEOWNERS`)
+- ✅ Require status checks to pass (add: `sf-validate`)
+- ✅ Require branches to be up to date before merging
+- ☐ Do not allow bypassing the above settings
+
+### `main` branch
+- ✅ Require a pull request before merging
+- ✅ Require approvals: **2 reviewers minimum**
+- ✅ Require review from Code Owners
+- ✅ Require status checks to pass (add: `sf-validate`)
+- ✅ Restrict who can push (add: release managers only)
+- ☐ Do not allow bypassing the above settings
+
+**Why this matters:** CODEOWNERS enforcement only activates when "Require review from Code Owners" is enabled. Without this, the `.github/CODEOWNERS` file exists but has no effect.
+```
 
 ---
 

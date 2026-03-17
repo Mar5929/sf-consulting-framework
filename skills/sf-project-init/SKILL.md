@@ -656,6 +656,7 @@ After all files are created and Linear is set up:
 2. Remind the user to configure MCP servers if not already set up:
    - `salesforcecli/mcp` — install instructions
    - Verify Linear, Context7, Playwright MCPs are active
+   - **Branch protection reminder:** Remind the user that `.github/CODEOWNERS` has been generated but requires branch protection to be enabled in GitHub Settings → Branches to take effect. Point them to `GETTING_STARTED.md` for step-by-step instructions.
 3. Based on entry point:
    - **Greenfield:** Begin the Discovery workflow — start requirements gathering
    - **Build Phase:** Review existing requirements, start sprint planning
