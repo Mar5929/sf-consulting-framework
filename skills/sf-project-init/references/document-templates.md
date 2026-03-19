@@ -487,6 +487,31 @@ Templates for the project wiki structure generated during scaffolding.
 - [ ] BACKLOG.md and CHANGELOG.md updated
 - [ ] Component registry current
 - [ ] No hardcoded IDs or credentials
+
+## Branch Protection Configuration
+
+Branch protection is configured in GitHub Settings → Branches.
+
+### `develop` branch rules
+| Rule | Setting |
+|------|---------|
+| Require PR before merging | ✅ Enabled |
+| Required approvals | 1 reviewer |
+| Require Code Owners review | ✅ Enabled (activates CODEOWNERS) |
+| Require status checks | sf-validate |
+| Require up-to-date branches | ✅ Enabled |
+
+### `main` branch rules
+| Rule | Setting |
+|------|---------|
+| Require PR before merging | ✅ Enabled |
+| Required approvals | 2 reviewers |
+| Require Code Owners review | ✅ Enabled |
+| Require status checks | sf-validate |
+| Restrict pushers | Release managers only |
+
+### CODEOWNERS
+See `.github/CODEOWNERS` for path-to-reviewer mappings. Update handles as team composition changes.
 ```
 
 ### wiki/ways-of-working/sandbox-strategy.md
@@ -766,10 +791,54 @@ Standard project README with:
 
 ## GETTING_STARTED.md
 
-Bootstrap prompt for Claude:
-- Read CLAUDE.md → CODE_ATLAS.md → BACKLOG.md
-- Summary of engagement context
-- Current phase and priority items
+Template for `GETTING_STARTED.md` in the project root. Covers onboarding steps for new team members.
+
+```markdown
+# Getting Started
+
+## Prerequisites
+- [ ] GitHub account added to the project repository
+- [ ] Salesforce sandbox access provisioned
+- [ ] VS Code with Salesforce Extension Pack installed
+- [ ] SFDX CLI installed (`npm install -g @salesforce/cli`)
+- [ ] Claude Code installed and configured
+
+## Clone and Setup
+```bash
+git clone [repo-url]
+cd [project-name]
+git checkout develop
+```
+
+## Authenticate to Salesforce
+```bash
+sf org login web --alias [your-alias] --instance-url [org-url]
+```
+
+## Branch Protection Setup
+
+This project uses GitHub branch protection on `develop` and `main`. Configure after repo creation:
+
+**GitHub Settings → Branches → Add branch protection rule:**
+
+### `develop` branch
+- ✅ Require a pull request before merging
+- ✅ Require approvals: **1 reviewer minimum**
+- ✅ Require review from Code Owners (activates `.github/CODEOWNERS`)
+- ✅ Require status checks to pass (add: `sf-validate`)
+- ✅ Require branches to be up to date before merging
+- ☐ Do not allow bypassing the above settings
+
+### `main` branch
+- ✅ Require a pull request before merging
+- ✅ Require approvals: **2 reviewers minimum**
+- ✅ Require review from Code Owners
+- ✅ Require status checks to pass (add: `sf-validate`)
+- ✅ Restrict who can push (add: release managers only)
+- ☐ Do not allow bypassing the above settings
+
+**Why this matters:** CODEOWNERS enforcement only activates when "Require review from Code Owners" is enabled. Without this, the `.github/CODEOWNERS` file exists but has no effect.
+```
 
 ---
 
@@ -952,3 +1021,348 @@ Structure for `deliverables/test-plans/`:
 6. Regression Test Suite
 7. Performance Test Criteria
 8. Defect Management Process
+
+---
+
+## CODEOWNERS Template
+
+Template for `.github/CODEOWNERS`. Generated during Phase 3 scaffolding, populated with GitHub handles from interview Round 1 team data.
+
+```
+# .github/CODEOWNERS
+#
+# Each line maps a path pattern to the GitHub users/teams who must approve PRs
+# touching those paths. The LAST matching pattern takes precedence.
+#
+# Format: <path-pattern>  <owner1> <owner2> ...
+# Replace @placeholder values with actual GitHub usernames or team handles.
+#
+# Activate by enabling "Require review from Code Owners" in GitHub
+# Settings → Branches → Branch protection rules.
+
+# ── Salesforce Source (Developers Only) ─────────────────────────
+/force-app/                     @dev-team
+/config/                        @dev-team
+/.github/workflows/             @dev-team @tech-lead
+
+# ── Living Docs (Developers own, others can propose) ────────────
+/docs/COMPONENT_REGISTRY.md     @dev-team
+/docs/COMPONENT_MANIFEST.yaml   @dev-team
+/docs/CODE_ATLAS.md             @dev-team
+/docs/TECHNICAL_SPEC.md         @dev-team @tech-lead
+/docs/DATA_MODEL.md             @dev-team @tech-lead
+
+# ── Requirements & Backlog (PM/BA own) ──────────────────────────
+/docs/BACKLOG.md                @github-actions[bot]
+/docs/REQUIREMENTS.md           @pm-team @ba-team
+/docs/DECISIONS.md              @tech-lead
+
+# ── Wiki (Shared, reviewed by PM/BA/Tech Lead) ──────────────────
+/wiki/                          @pm-team @ba-team @tech-lead
+
+# ── Deliverables (Role-based) ───────────────────────────────────
+/deliverables/brd/              @ba-team
+/deliverables/sdd/              @tech-lead @dev-team
+/deliverables/test-plans/       @qa-team
+/deliverables/data-migration/   @dev-team
+/deliverables/architecture/     @tech-lead
+/deliverables/presentations/    @pm-team
+/deliverables/training/         @pm-team @ba-team
+
+# ── Project Config (Tech Lead only) ─────────────────────────────
+/CLAUDE.md                      @tech-lead
+/sfdx-project.json              @tech-lead
+```
+
+**Population rules:**
+- Replace `@dev-team` with actual developer GitHub usernames from Round 1 (space-separated)
+- Replace `@tech-lead` with the tech lead's GitHub username
+- Replace `@pm-team` with PM GitHub usernames
+- Replace `@ba-team` with BA GitHub usernames
+- Replace `@qa-team` with QA GitHub usernames
+- If a role has no team members, remove that line
+- If the engagement is single-developer, set all paths to that developer's username
+
+---
+
+## Registry Domain File Template
+
+Template for `docs/registry/{domain-id}.md`. One file per business domain. Hand-maintained by developers working in that domain. These files are the editable source; `docs/COMPONENT_REGISTRY.md` is an auto-generated summary.
+
+```markdown
+# {Domain Name} — Component Registry
+
+**Domain ID:** `{domain-id}`
+**Domain Owner:** {team or developer}
+**Last Updated:** {date}
+
+> This file is the authoritative registry for all Salesforce components in the `{domain-id}` domain.
+> Update it whenever you create, modify, or delete a component in this domain.
+> **Do not edit `docs/COMPONENT_REGISTRY.md` directly — it is auto-generated.**
+
+---
+
+## Custom Objects
+
+| Component | API Name | Description | BL-ID | Status |
+|-----------|----------|-------------|-------|--------|
+| _(none yet)_ | | | | |
+
+## Custom Fields
+
+| Object | Field Label | API Name | Type | Description | BL-ID | Status |
+|--------|-------------|----------|------|-------------|-------|--------|
+| _(none yet)_ | | | | | | |
+
+## Apex Classes
+
+| Class Name | Type | Description | BL-ID | Status |
+|------------|------|-------------|-------|--------|
+| _(none yet)_ | | | | |
+
+## Apex Triggers
+
+| Trigger Name | Object | Events | Description | BL-ID | Status |
+|--------------|--------|--------|-------------|-------|--------|
+| _(none yet)_ | | | | | |
+
+## Flows
+
+| Flow Name | Type | Description | BL-ID | Status |
+|-----------|------|-------------|-------|--------|
+| _(none yet)_ | | | | |
+
+## Lightning Web Components
+
+| Component Name | Description | BL-ID | Status |
+|----------------|-------------|-------|--------|
+| _(none yet)_ | | | |
+
+## Permission Sets
+
+| Permission Set | Description | BL-ID | Status |
+|----------------|-------------|-------|--------|
+| _(none yet)_ | | | |
+
+## Other Components
+
+| Type | Component Name | Description | BL-ID | Status |
+|------|----------------|-------------|-------|--------|
+| _(none yet)_ | | | | |
+
+---
+
+## Recent Changes
+
+| Date | BL-ID | Change |
+|------|-------|--------|
+| {date} | BL-XXX | Initial domain registry created |
+```
+
+---
+
+## Sprint Changelog Template
+
+Template for `docs/changelog/sprint-YYYY-MM-DD.md`. One file per sprint, named by sprint start date. Developers append to the current sprint's file during development. `docs/CHANGELOG.md` is an auto-generated rollup — do not edit it directly.
+
+```markdown
+<!-- Sprint changelog for sprint starting {YYYY-MM-DD} -->
+<!-- CHANGELOG.md is auto-generated from sprint files — edit this file, not CHANGELOG.md -->
+
+# Sprint {YYYY-MM-DD} Changelog
+
+**Sprint start:** {YYYY-MM-DD}
+**Sprint end:** {YYYY-MM-DD (2 weeks later)}
+
+---
+
+## Added
+
+<!-- New features and components created this sprint -->
+- _(none yet)_
+
+## Changed
+
+<!-- Modifications to existing components -->
+- _(none yet)_
+
+## Fixed
+
+<!-- Bug fixes -->
+- _(none yet)_
+
+## Docs Updated
+
+<!-- Living document updates -->
+- _(none yet)_
+
+---
+```
+
+**File naming:** Use the sprint start date: `docs/changelog/sprint-2026-03-17.md`
+
+**Update protocol:** During development, append entries under the relevant section:
+```
+## Added
+- `feat(BL-XXX)`: Created AccountService.cls — centralized account management service
+```
+
+---
+
+## Active Work Lock File Template
+
+Template for `docs/.active-work.json`. Tracks which developer is actively modifying which files. Updated by sf-develop on start and finish. Read by sf-develop's conflict pre-check and CLAUDE.md session startup.
+
+```json
+{
+  "locks": []
+}
+```
+
+**Lock entry schema:**
+```json
+{
+  "developer": "Developer Name",
+  "branch": "feature/BL-XXX-short-description",
+  "domain": "lead-management",
+  "files": [
+    "force-app/main/default/classes/AccountService.cls",
+    "force-app/main/default/classes/AccountService.cls-meta.xml"
+  ],
+  "started": "2026-03-17T10:00:00Z",
+  "linear_issue": "RIH-XXX"
+}
+```
+
+**Protocol:**
+- **On work start (sf-develop Section 0):** Read the file, add own lock entry, commit and push
+- **On work finish (sf-develop Section 7):** Read the file, remove own lock entry, commit and push
+- **On conflict:** Warn the developer with advisory message — do not block
+
+---
+
+## CONTRIBUTING.md Template
+
+Template for `CONTRIBUTING.md` in the project root. Generated when non-technical team members will use the repo directly. Provides role-specific git workflow guides.
+
+````markdown
+# Contributing to [Project Name]
+
+This guide covers how different roles contribute to this repository. Read the section for your role.
+
+---
+
+## For Developers
+
+Developers own the Salesforce source code and CI/CD configuration.
+
+### Your workflow
+1. Pick up a Linear issue assigned to you
+2. Run the sf-develop skill in Claude Code — it will guide you through branch creation, implementation, and PR creation
+3. All work goes on a `feature/BL-XXX-description` branch — never commit directly to `develop`
+4. Your PR must pass `sf-validate` CI checks before merge
+
+### Files you own
+- `force-app/` — Salesforce source code
+- `config/` — SFDX configuration
+- `docs/COMPONENT_REGISTRY.md`, `docs/COMPONENT_MANIFEST.yaml`, `docs/registry/`
+- `.github/workflows/`
+
+---
+
+## For Project Managers (PMs)
+
+PMs manage the project backlog, timeline, and stakeholder communication.
+
+### Your workflow
+- **Backlog:** Manage all backlog items in **Linear** (not BACKLOG.md — it's auto-generated)
+- **Documentation:** Edit `wiki/ways-of-working/roadmap-timelines.md`, `wiki/ways-of-working/recurring-meetings.md`, and `deliverables/presentations/`
+- **Raising issues:** Create issues in Linear; developers will pick them up
+
+### Your git workflow (if editing docs directly)
+```bash
+git checkout develop
+git pull origin develop
+git checkout -b docs/pm-update-roadmap
+# Make your changes
+git add wiki/ways-of-working/roadmap-timelines.md
+git commit -m "docs: update roadmap timeline for Q2"
+git push origin docs/pm-update-roadmap
+# Create PR on GitHub → request review from @tech-lead
+```
+
+### Files you own
+- `wiki/ways-of-working/roadmap-timelines.md`
+- `wiki/ways-of-working/recurring-meetings.md`
+- `deliverables/presentations/`
+
+---
+
+## For Business Analysts (BAs)
+
+BAs own requirements documentation and business process definitions.
+
+### Your workflow
+- **Requirements:** Edit `deliverables/brd/` and `wiki/applications/{app}/requirements.md`
+- **Never edit** `force-app/`, `config/`, or `docs/COMPONENT_MANIFEST.yaml`
+
+### Your git workflow
+```bash
+git checkout develop
+git pull origin develop
+git checkout -b docs/ba-update-requirements
+# Make your changes to deliverables/ or wiki/
+git add deliverables/brd/requirements-update.md
+git commit -m "docs: update BRD with new lead routing requirements"
+git push origin docs/ba-update-requirements
+# Create PR → request review from @pm-team
+```
+
+### Files you own
+- `deliverables/brd/`
+- `wiki/applications/{app}/requirements.md`
+- `wiki/applications/{app}/process-flows.md`
+
+---
+
+## For QA Engineers
+
+QA owns test plans, test scripts, and defect documentation.
+
+### Your git workflow
+```bash
+git checkout develop
+git pull origin develop
+git checkout -b docs/qa-test-plan-sprint-3
+# Make your changes to deliverables/test-plans/
+git add deliverables/test-plans/sprint-3-test-plan.md
+git commit -m "docs: add sprint 3 UAT test scripts"
+git push origin docs/qa-test-plan-sprint-3
+# Create PR → request review from @pm-team
+```
+
+### Files you own
+- `deliverables/test-plans/`
+
+---
+
+## Commit Message Format
+
+All commits should follow this format:
+```
+type: short description
+
+Types: feat | fix | docs | chore | test | refactor
+Examples:
+  docs: update BRD with new lead routing requirements
+  feat(BL-042): create AccountService Apex class
+```
+
+## PR Checklist
+
+Before submitting a PR:
+- [ ] I only changed files in my role's ownership area
+- [ ] I did NOT use `git add .` — I staged specific files by name
+- [ ] My commit message follows the format above
+- [ ] I've requested review from the appropriate Code Owners
+````

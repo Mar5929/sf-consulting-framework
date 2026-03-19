@@ -94,7 +94,7 @@ Read `references/solutioning-checklist.md` for the detailed checklist template. 
 
 - [ ] **Data model documented for touched objects** — Check `docs/DATA_MODEL.md`. If new objects or fields are needed, document them first. Include field types, relationships, data classification, and validation rules.
 
-- [ ] **Component registry current for the area** — Check `docs/COMPONENT_REGISTRY.md`. Verify all existing components in the affected area are documented. Any new components must be added before or during implementation.
+- [ ] **Component registry current for the area** — Check `docs/registry/{domain-id}.md` for the affected domain (or `docs/COMPONENT_REGISTRY.md` if per-domain split is not enabled). Verify all existing components in the affected area are documented. Any new components must be added before or during implementation.
 
 - [ ] **Component manifest current for affected domains** — Grep `docs/COMPONENT_MANIFEST.yaml` for affected domain(s). Verify domain tags, dependencies, and component entries are up to date. Check `docs/domains/{domain-id}.md` for domain context currency.
 

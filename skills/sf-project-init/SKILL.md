@@ -48,6 +48,9 @@ Ask these questions to establish the engagement:
 - What is the **client name** and **project name**?
 - What is your **role** on this engagement? (Lead architect, developer, admin, consultant)
 - How large is the **consulting team**? Who else will be working in this repo?
+- Are there **non-technical team members** (PMs, BAs, QAs) who will work in this repo? If yes:
+  - Which roles? (PM, BA, QA, Analyst, Stakeholder)
+  - Will non-technical members **edit documentation directly in the repo**, or will they use Linear/Notion/external tools instead? (Knowing this determines whether we need CONTRIBUTING.md role guides and stricter CI guards)
 - What is the **entry point** for this engagement?
   - **Discovery / Greenfield** — Starting from scratch, full requirements gathering
   - **Build Phase** — Requirements exist, jumping into development
@@ -164,6 +167,10 @@ Read `references/document-templates.md` for template structures.
 - **Code review policy** — require PR review before merge? Minimum reviewers?
 - **Test coverage target** — Salesforce requires 75%, recommend **85%+**
 - **Apex code standards** — accept the 16 Golden Rules as defaults? (see below)
+- **Multi-user safety setup** — For teams with multiple contributors:
+  - Should we set up **CODEOWNERS** to enforce path-based review requirements? (Recommended if team > 1; prevents wrong-role changes from merging without approval)
+  - The `docs-validate.yml` CI workflow will be set up automatically. Should it be configured in **enforcement mode** (blocks merges if non-technical PRs touch code files) or **advisory mode** (warns only)? Enforcement mode is recommended if PMs/BAs/QAs will submit PRs directly. Advisory mode is safer to start with.
+  - *(If team > 3)* Recommend: **per-domain component registry split** (`docs/registry/{domain}.md`) to eliminate merge conflicts between developers working on different domains simultaneously. Enable this?
 
 ### Round 7 — Security & Compliance
 
@@ -313,7 +320,7 @@ Generate with the **14-section structure** from `references/document-templates.m
 **Section 5 — Coding Standards:** Salesforce-specific: Apex (bulkification, trigger handlers, SOQL best practices), LWC (wire vs imperative, SLDS, accessibility), Flows (naming, documentation)
 **Section 6 — Tech Stack:** Salesforce Platform, SFDX CLI, VS Code, GitHub, GitHub Actions, selected products
 **Section 7 — Key Commands:** SFDX commands grouped by: Org Management, Source Operations, Testing, Deployment
-**Section 8 — Session Startup:** Read CLAUDE.md → CODE_ATLAS.md → BACKLOG.md → ask what to work on. Includes Component Manifest Retrieval Protocol for lazy-loading domain context when working on specific items
+**Section 8 — Session Startup:** Read CLAUDE.md → CODE_ATLAS.md → BACKLOG.md → check `docs/.active-work.json` for active locks → ask what to work on. If `.active-work.json` shows another developer working on files in the same domain, warn: "[Developer] is currently working on [files] for [BL-ID]. Coordinate before modifying these files." Includes Component Manifest Retrieval Protocol for lazy-loading domain context when working on specific items
 **Section 9 — Git Commit Protocol:** GitFlow format, `feat(BL-XXX): summary`
 **Section 10 — Clarification Protocol:** Always clarify: object model changes, sharing rules, security settings, integrations
 **Section 11 — Context Window Management:** Use docs as external memory, reference by path
@@ -392,6 +399,7 @@ If the user has no client-specific conventions, omit this section entirely — W
 Read `references/cicd-templates.md` and generate:
 - `.github/workflows/sf-validate.yml`
 - `.github/workflows/sf-deploy.yml`
+- `.github/workflows/docs-validate.yml` — always generated; protects docs PRs from accidental code changes
 
 ### Directory Structure
 
@@ -401,6 +409,7 @@ project-root/
 ├── CLAUDE.md
 ├── README.md
 ├── GETTING_STARTED.md
+├── CONTRIBUTING.md                    # Role-specific workflow guide (if non-technical users)
 ├── sfdx-project.json
 ├── .forceignore
 ├── .gitignore
@@ -410,11 +419,16 @@ project-root/
 │   ├── REQUIREMENTS.md
 │   ├── TECHNICAL_SPEC.md
 │   ├── DECISIONS.md
-│   ├── CHANGELOG.md
+│   ├── CHANGELOG.md                   # Auto-generated rollup (do not edit directly)
+│   ├── changelog/                     # Per-sprint changelog files (hand-maintained)
+│   │   └── sprint-YYYY-MM-DD.md       # One per sprint — edit these, not CHANGELOG.md
 │   ├── DATA_MODEL.md
 │   ├── CODE_ATLAS.md
-│   ├── COMPONENT_REGISTRY.md          # NON-OPTIONAL — human-readable component inventory
+│   ├── .active-work.json              # Active developer lock file (auto-maintained by sf-develop)
+│   ├── COMPONENT_REGISTRY.md          # NON-OPTIONAL — auto-generated summary (do not edit directly)
 │   ├── COMPONENT_MANIFEST.yaml        # NON-OPTIONAL — machine-readable domain-tagged index
+│   ├── registry/                      # Per-domain registry files (hand-maintained by developers)
+│   │   └── {domain-id}.md             # One per domain — edit these, not COMPONENT_REGISTRY.md
 │   └── domains/                       # Per-domain context files for lazy-loading retrieval
 │       └── {domain-id}.md             # One per business domain (50-100 lines each)
 │
@@ -470,9 +484,11 @@ project-root/
 │   └── linear-sync.js                 # If Linear sync opted in
 │
 └── .github/
+    ├── CODEOWNERS                     # Path-based review ownership
     └── workflows/
         ├── sf-validate.yml
         ├── sf-deploy.yml
+        ├── docs-validate.yml          # Docs-only PR guard (multi-user safety)
         └── linear-sync.yml            # If Linear sync opted in
 ```
 
@@ -495,10 +511,15 @@ Populate the `wiki/` directory based on interview answers:
 
 ### Component Registry Generation
 
-Generate `docs/COMPONENT_REGISTRY.md` with:
+Generate `docs/COMPONENT_REGISTRY.md` as an auto-generated summary file:
 - Summary table with all categories at count 0
-- All category section headers with empty tables
+- Header comment: `<!-- AUTO-GENERATED — Do not edit directly. Update docs/registry/{domain-id}.md files instead. -->`
 - This is **NON-OPTIONAL** — always generated regardless of user selections
+
+Generate `docs/registry/` directory with one starter file per domain identified in the interview (same domains used for `docs/domains/`):
+- Create `docs/registry/{domain-id}.md` for each domain using the template from `references/document-templates.md`
+- Populate domain name and ID from interview answers
+- Leave component tables empty — populated during development
 
 ### Component Manifest Generation
 
@@ -509,6 +530,21 @@ Generate `docs/COMPONENT_MANIFEST.yaml` with:
 - Read `references/document-templates.md` for the full YAML schema
 - This is **NON-OPTIONAL** — always generated regardless of user selections
 
+### Active Work Lock File Generation
+
+Generate `docs/.active-work.json` with an empty locks array:
+```json
+{ "locks": [] }
+```
+This file is maintained automatically by the sf-develop skill — developers do not edit it manually.
+
+### Sprint Changelog Generation
+
+Generate the `docs/changelog/` directory:
+- Create `docs/changelog/sprint-{project-start-date}.md` using the sprint changelog template from `references/document-templates.md`
+- The sprint start date is derived from the engagement start date captured in the interview
+- Add a header comment to `docs/CHANGELOG.md`: `<!-- AUTO-GENERATED — Do not edit directly. Update docs/changelog/sprint-YYYY-MM-DD.md files instead. -->`
+
 ### Domain Context Files Generation
 
 Generate `docs/domains/{domain-id}.md` stub files:
@@ -517,6 +553,22 @@ Generate `docs/domains/{domain-id}.md` stub files:
 - Populate Business Purpose from interview answers (Round 3 product context, Round 4 business processes)
 - Leave Key Objects, Key Automation, Key UI sections as placeholders — populated during development
 - If client metadata conventions (captured in Round 8 `## Client Metadata Conventions`) apply to specific domains, note which domains have client-specific conventions that override Well-Architected defaults
+
+### CONTRIBUTING.md Generation (Conditional)
+
+If Round 1 revealed non-technical team members who will use the repo directly:
+- Generate `CONTRIBUTING.md` at the project root using the template from `references/document-templates.md`
+- Customize the role sections based on which non-technical roles are present (PM, BA, QA)
+- If only technical developers use the repo, skip this file
+
+### CODEOWNERS Generation
+
+Generate `.github/CODEOWNERS` using the template from `references/document-templates.md`:
+- Replace `@dev-team` with developer GitHub usernames from Round 1
+- Replace `@tech-lead` with the tech lead's GitHub username from Round 1
+- Replace `@pm-team`, `@ba-team`, `@qa-team` with respective role handles from Round 1
+- If a role has no team members, remove the corresponding lines
+- If single-developer engagement: set all paths to that developer's username
 
 ### Linear Sync Generation
 
@@ -562,12 +614,17 @@ git push origin main
 git checkout develop             # Return to develop as default
 ```
 
-### Step 4 — Configure branch protection (optional, recommended)
+### Step 4 — Configure branch protection and CODEOWNERS (optional, recommended)
 
-Remind the user to set branch protection rules in GitHub Settings → Branches after the repo is created:
+Remind the user to configure the following in GitHub Settings → Branches:
 
-- `develop` branch: require PR review (1 reviewer), require status checks (sf-validate workflow)
-- `main` branch: require PR review (2 reviewers), require status checks, restrict pushers to release managers
+**CODEOWNERS activation:**
+- CODEOWNERS is already generated at `.github/CODEOWNERS`
+- To activate it: enable "Require review from Code Owners" in branch protection rules
+
+**Branch protection rules:**
+- `develop` branch: require PR review (1 reviewer), require CODEOWNERS review, require status checks (sf-validate workflow), require branches to be up to date before merging
+- `main` branch: require PR review (2 reviewers), require CODEOWNERS review, require status checks, restrict pushers to release managers
 
 > **Note:** Branch protection can be configured via `gh api` if the user wants it automated. Ask if they'd like that.
 
@@ -641,6 +698,7 @@ After all files are created and Linear is set up:
 2. Remind the user to configure MCP servers if not already set up:
    - `salesforcecli/mcp` — install instructions
    - Verify Linear, Context7, Playwright MCPs are active
+   - **Branch protection reminder:** Remind the user that `.github/CODEOWNERS` has been generated but requires branch protection to be enabled in GitHub Settings → Branches to take effect. Point them to `GETTING_STARTED.md` for step-by-step instructions.
 3. Based on entry point:
    - **Greenfield:** Begin the Discovery workflow — start requirements gathering
    - **Build Phase:** Review existing requirements, start sprint planning

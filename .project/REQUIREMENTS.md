@@ -48,6 +48,13 @@ A standardized framework for Salesforce consulting engagements, built on Claude 
 | REQ-024 | Component Registry | P0 | DRAFT |
 | REQ-025 | Backlog-to-Linear Sync | P1 | DRAFT |
 | REQ-026 | Global Project Instructions (Rules 14-16) | P0 | DRAFT |
+| REQ-027 | Path-Based File Ownership (CODEOWNERS) | P0 | DRAFT |
+| REQ-028 | Branch Naming Enforcement | P1 | DRAFT |
+| REQ-029 | Docs-Only PR Separation | P0 | DRAFT |
+| REQ-030 | Registry Conflict Prevention (Per-Domain Split) | P1 | DRAFT |
+| REQ-031 | BACKLOG.md as Auto-Generated (Linear Source of Truth) | P1 | DRAFT |
+| REQ-032 | Active Work Visibility (Lock File) | P2 | DRAFT |
+| REQ-033 | Commit Format Enforcement | P1 | DRAFT |
 
 ---
 
@@ -743,3 +750,112 @@ Three new Golden Rules added to the CLAUDE.md template, expanding from 13 to 16 
 - New event-to-action rows added to CLAUDE.md Section 4
 - Rules documented in `skills/sf-project-init/references/workflow-rules.md` under "Global Project Constraints"
 - Rules embedded in the CLAUDE.md template in `skills/sf-project-init/references/document-templates.md`
+
+---
+
+### REQ-027: Path-Based File Ownership (CODEOWNERS)
+
+**Priority:** P0
+**Status:** DRAFT
+
+The framework must generate a `.github/CODEOWNERS` file during project scaffolding that maps file path patterns to required approvers by role. This enforces that force-app/ changes require developer approval, wiki/deliverables changes route to PMs/BAs/QAs, and protected config files require tech lead sign-off.
+
+**Acceptance Criteria:**
+- sf-project-init generates `.github/CODEOWNERS` during Phase 3 scaffolding
+- CODEOWNERS covers: `/force-app/`, `/config/`, `/.github/workflows/`, `/docs/COMPONENT_REGISTRY.md`, `/docs/COMPONENT_MANIFEST.yaml`, `/docs/CODE_ATLAS.md`, `/docs/TECHNICAL_SPEC.md`, `/docs/DATA_MODEL.md`, `/docs/BACKLOG.md`, `/docs/REQUIREMENTS.md`, `/docs/DECISIONS.md`, `/wiki/`, all `/deliverables/` subdirectories, `/CLAUDE.md`, `/sfdx-project.json`
+- Template uses `@team-placeholder` references populated from interview Round 1
+- Branch protection must be enabled in GitHub to activate CODEOWNERS enforcement
+
+---
+
+### REQ-028: Branch Naming Enforcement
+
+**Priority:** P1
+**Status:** DRAFT
+
+The sf-develop skill must guide developers to create a properly named feature branch before any implementation work begins. Branch names must follow the pattern `feature/BL-XXX-short-description` where BL-XXX is the Linear issue ID.
+
+**Acceptance Criteria:**
+- sf-develop Section 0 (Git Branch Setup) runs before any implementation steps
+- Developer is prompted to verify clean working directory, pull latest develop, and create feature branch
+- If no BL-ID exists for the work item, the developer is directed to create a Linear issue first
+- Branch creation step explicitly sets the branch name format
+
+---
+
+### REQ-029: Docs-Only PR Separation
+
+**Priority:** P0
+**Status:** DRAFT
+
+The framework must generate a GitHub Actions workflow (`docs-validate.yml`) that triggers on PRs touching docs/, wiki/, or deliverables/ paths and fails if any force-app/, config/, or .github/workflows/ files are also present. This prevents non-technical team members from accidentally including code changes in documentation PRs.
+
+**Acceptance Criteria:**
+- sf-project-init generates `.github/workflows/docs-validate.yml` during Phase 3 scaffolding
+- Workflow triggers on PRs to develop and main that touch docs/**, wiki/**, or deliverables/**
+- `check-no-code-changes` job fails with descriptive error listing offending files
+- `validate-markdown` job runs markdownlint on all changed markdown files
+- Clear error message instructs user to split into separate PRs
+
+---
+
+### REQ-030: Registry Conflict Prevention (Per-Domain Split)
+
+**Priority:** P1
+**Status:** DRAFT
+
+The monolithic `docs/COMPONENT_REGISTRY.md` must be split into per-domain registry files under `docs/registry/`. Each domain's components are tracked in a separate file (e.g., `docs/registry/lead-management.md`), eliminating merge conflicts between developers working on different domains simultaneously.
+
+**Acceptance Criteria:**
+- sf-project-init generates `docs/registry/` directory with per-domain starter files during Phase 3 scaffolding
+- Each domain file contains a components table with standard columns
+- The top-level `docs/COMPONENT_REGISTRY.md` becomes an auto-generated summary (nobody edits it directly)
+- sf-develop Section 6 directs component updates to the domain-specific registry file
+- sf-architect-solutioning Pre-Implementation Gate checks the relevant domain registry file
+
+---
+
+### REQ-031: BACKLOG.md as Auto-Generated (Linear Source of Truth)
+
+**Priority:** P1
+**Status:** DRAFT
+
+`docs/BACKLOG.md` must be treated as a read-only auto-generated file produced by the Linear sync workflow. All backlog management happens in Linear; no developer manually edits BACKLOG.md. This eliminates BACKLOG.md as a merge conflict source.
+
+**Acceptance Criteria:**
+- `linear-sync.js` generates a complete BACKLOG.md from Linear data (phases, titles, priorities, statuses, BL-IDs)
+- BACKLOG.md includes a header comment: `<!-- AUTO-GENERATED — Do not edit directly. Update issues in Linear. -->`
+- CODEOWNERS assigns BACKLOG.md to `@github-actions[bot]`
+- Workflow rules document: "Linear is the sole BACKLOG source of truth"
+- sf-develop no longer includes a manual BACKLOG.md update step
+
+---
+
+### REQ-032: Active Work Visibility (Lock File)
+
+**Priority:** P2
+**Status:** DRAFT
+
+The framework must generate and maintain a `docs/.active-work.json` file that tracks which developer is actively modifying which files. This gives Claude Code sessions cross-developer visibility into concurrent work, enabling conflict warnings before they become merge conflicts.
+
+**Acceptance Criteria:**
+- sf-project-init generates `docs/.active-work.json` with empty locks array during Phase 3 scaffolding
+- sf-develop Section 0 reads existing locks, adds own lock entry (developer, branch, files, started, linear_issue), commits and pushes
+- sf-develop Section 7 removes own lock entry on work completion, commits and pushes
+- CLAUDE.md Session Startup section includes step to read `.active-work.json` and warn if another developer has locks in the same domain
+- Lock conflicts are advisory (warning only), not blocking
+
+---
+
+### REQ-033: Commit Format Enforcement
+
+**Priority:** P1
+**Status:** DRAFT
+
+The framework must validate that commits in code PRs follow the `feat(BL-XXX): description` format via a CI check. This ensures all commits are traceable to Linear issues and follow the project's conventional commit convention.
+
+**Acceptance Criteria:**
+- `check-commit-format` job added to sf-validate.yml template
+- Job validates all commits in the PR against pattern `^(feat|fix|chore|docs|test|refactor)\(BL-[0-9]+\):`
+- Non-compliant commits generate `::warning::` annotations (not blocking)
+- sf-develop Section 7 uses `feat(BL-XXX):` format in all commit examples

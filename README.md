@@ -319,3 +319,19 @@ sf-consulting-framework/
 ├── reference/                          # Interactive HTML diagrams + framework documents (docx, pptx)
 └── .project/                           # Internal project tracking
 ```
+
+## Multi-User Concurrency
+
+Phase 8 adds seven layers of guardrails for teams with developers, PMs, BAs, and QAs working simultaneously:
+
+| Layer | Mechanism | Purpose |
+|-------|-----------|---------|
+| 1. CODEOWNERS | `.github/CODEOWNERS` | Path-based review enforcement |
+| 2. CI Checks | `docs-validate.yml`, enhanced `sf-validate.yml` | Prevent cross-domain contamination |
+| 3. Structured Living Docs | Per-domain registry, per-sprint changelog | Eliminate merge conflict hotspots |
+| 4. Git Workflow | Branch setup → conflict pre-check → commit/PR in `sf-develop` | Consistent team git hygiene |
+| 5. Session Awareness | `docs/.active-work.json` lock file | Cross-developer visibility |
+| 6. Auto-Generated BACKLOG | `linear-sync.js` regenerates from Linear | Linear as sole source of truth |
+| 7. Skill Updates | All three skills concurrency-aware | Guardrails embedded in daily workflow |
+
+For full architectural details, see `sf-consulting-framework-multiuser-plan.md`.
